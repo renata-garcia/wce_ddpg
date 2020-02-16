@@ -1,0 +1,12 @@
+environment: 
+  type: environment/modeled
+  model: 
+    type: model/dynamical
+    control_step: 0.03
+    integration_steps: 5
+    dynamics: 
+      type: dynamics/pendulum
+  task: 
+    type: task/pendulum/swingup
+    timeout: 2.99
+    randomization: 1
