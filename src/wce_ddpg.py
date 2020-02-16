@@ -227,7 +227,7 @@ def get_action_ensemble(sess, ensemble, sin, q_res, obs):
 register(
   id='GrlEnv-Pendulum-v0',
   entry_point='grlenv.grlenv:GrlEnv',
-  kwargs={"file":"pendulum_swingup.yaml"}
+  kwargs={"file":"../cfg/pendulum_swingup.yaml"}
 )
 
 
