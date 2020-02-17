@@ -15,81 +15,53 @@ from gym.envs.registration import register
 from gym import logger as gymlogger
 gymlogger.set_level(40) #error only
 import tensorflow as tf
-import random
-import sys
 
-import DDPGNetwork, DDPGNetworkNode, WeightCritic
+import DDPGNetwork, DDPGNetworkNode, WeightCritic, ReplayMemory
 
 # Register environmnent instantiation. Every configuration file
 # requires a different instantiation, as Gym does not allow passing
 # parameters to an environment.
 # The configuration must define an "environment" tag at the root that
 # specifies the environment to be used.
-print(sys.argv)
-print(len(sys.argv))
 
 with open("../cfg/agent_pd_3good_j0.yaml", 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
-
-for section in cfg:
-    print(section)
-print(cfg['experiment'])
-print(cfg['experiment']['agent'])
-#TODO python yaml count elements
 
 if cfg['experiment']['runs'] > 1:
   print("Experiment/runs > 1 will not save outfile file in correct manner!!!")
   exit(-1)
 
-if len(sys.argv) == 1:
+
+num_ensemble = len(cfg['experiment']['agent']['policy']['policy'])
+if num_ensemble == 1:
   enable_ensemble = 1
-  lr_actor = 0.001
-  lr_critic = 0.0001
-  replay_steps = 64
-  size_batch = 16
-  gamma = 0.99
-  tau = 0.01
-  episodes = 4000
-  num_ensemble = 3
-elif len(sys.argv) != 9:
-  print(sys.argv)
-  sys.exit(1)
 else:
-  enable_ensemble = int(sys.argv[1]) #1;
-  lr_actor = float(sys.argv[2]) #0.0001
-  lr_critic = float(sys.argv[3]) #0.001
-  replay_steps = int(sys.argv[4]) #64
-  size_batch = int(sys.argv[5]) #16
-  gamma = float(sys.argv[6]) #0.99
-  tau = float(sys.argv[7]) #0.001
-  episodes = int(sys.argv[8]) #1000
+  enable_ensemble = 2
+cfg_ens = []
 
-print("simple_ddpg: ", enable_ensemble, "lr_actor: ", lr_actor, ", lr_critic: ", lr_critic, "\n",
-      ", replay_steps: ", replay_steps, ", size_batch: ", size_batch, ", gamma: ", gamma, "\n",
-      ", tau: ", tau, ", episodes: ", episodes)
+for x in cfg['experiment']['agent']['policy']['policy']:
+  str = x['representation']['file'].split()
+  tmp = {}
+  tmp['lr_actor'] = float(x['representation']['file'].split()[3])
+  tmp['lr_critic'] = float(x['representation']['file'].split()[4])
+  tmp['act1'] = x['representation']['file'].split()[5] #TODO unused
+  tmp['act2'] = x['representation']['file'].split()[6] #TODO unused
+  tmp['layer1'] = x['representation']['file'].split()[7] #TODO unused
+  tmp['layer2'] = x['representation']['file'].split()[8] #TODO unused
+  tmp['tau'] = x['representation']['tau']
+  cfg_ens.append(tmp)
 
-"""DDPG actor-critic network with two hidden layers"""
+ii = 0
+for x in cfg['experiment']['agent']['predictor']['predictor']:
+  tmp = cfg_ens[ii]
+  ii = ii + 1
+  tmp['gamma'] = x['gamma']
+  tmp['reward_scale'] = x['reward_scale'] #TODO unused
 
-
-"""Memory of all past transitions for experience replay"""
-
-class ReplayMemory():
-  def __init__(self):
-    self.memory = []
-
-  def sample_minibatch(self, batch_size):
-    batch = [self.memory[random.randint(0, len(self.memory) - 1)] for a in range(batch_size)]
-    obs = [e[0] for e in batch]
-    act = [e[1] for e in batch]
-    rew = [e[2] for e in batch]
-    nobs = [e[3] for e in batch]
-    return obs, act, rew, nobs
-
-  def add(self, obs, act, rew, nobs):
-    self.memory.append((obs, act, rew, nobs))
-
-  def size(self):
-    return len(self.memory)
+cfg_agt = {}
+cfg_agt['replay_steps'] = cfg['experiment']['agent']['replay_steps']
+cfg_agt['batch_size'] = cfg['experiment']['agent']['batch_size']
+cfg_agt['episodes'] = cfg['experiment']['steps']  #TODO normalize
 
 
 def get_action_ddpg(sess, network, sin, obs):
@@ -140,11 +112,12 @@ td = tf.placeholder(tf.float32, shape=(None, num_ensemble), name='td')
 
 ensemble = [] #DDPGNetworkEnsemble
 if enable_ensemble:
-  for i in range(num_ensemble):
+  for ne in range(num_ensemble):
     prev_vars = len(tf.trainable_variables())
-    network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env.action_space.shape[0], max_action, lr_actor, lr_critic)
-    target_network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env.action_space.shape[0], max_action, lr_actor, lr_critic)
+    network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env.action_space.shape[0], max_action, cfg_ens[ne]['lr_actor'], cfg_ens[ne]['lr_critic'])
+    target_network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env.action_space.shape[0], max_action, cfg_ens[ne]['lr_actor'], cfg_ens[ne]['lr_critic'])
     vars = tf.trainable_variables()[prev_vars:]
+    tau = cfg_ens[ne]['tau']
     update_ops = [vars[ix + len(vars) // 2].assign_add(tau * (var.value() - vars[ix + len(vars) // 2].value())) for
                   ix, var in enumerate(vars[0:len(vars) // 2])]
     ensemble.append((network, target_network, update_ops))
@@ -155,12 +128,13 @@ if enable_ensemble:
   qs = tf.reshape(qs1, [1,3])
 
   qin = tf.placeholder_with_default(tf.stop_gradient(qs), shape=(None, num_ensemble), name='qin')
-  q_critic = WeightCritic.WeightCritic(session, qin, td, lr_critic)
+  q_critic = WeightCritic.WeightCritic(session, qin, td, 0.0001) #TODO test
 else:
     prev_vars = len(tf.trainable_variables())
-    network = DDPGNetwork.DDPGNetwork(session, env.observation_space.shape[0]+1, env.action_space.shape[0], max_action, lr_actor, lr_critic)
-    target_network = DDPGNetwork.DDPGNetwork(session, env.observation_space.shape[0]+1, env.action_space.shape[0], max_action, lr_actor, lr_critic)
+    network = DDPGNetwork.DDPGNetwork(session, env.observation_space.shape[0]+1, env.action_space.shape[0], max_action, cfg_ens[0]['lr_actor'], cfg_ens[0]['lr_critic'])
+    target_network = DDPGNetwork.DDPGNetwork(session, env.observation_space.shape[0]+1, env.action_space.shape[0], max_action, cfg_ens[0]['lr_actor'], cfg_ens[0]['lr_critic'])
     vars = tf.trainable_variables()[prev_vars:]
+    tau = cfg_agt[0]['tau']
     update_ops = [vars[ix + len(vars) // 2].assign_add(tau * (var.value() - vars[ix + len(vars) // 2].value())) for
                   ix, var in enumerate(vars[0:len(vars) // 2])]
 
@@ -171,7 +145,7 @@ print("# Initialize weights")
 session.run(tf.global_variables_initializer())
 
 # Initialize replay memory
-memory = ReplayMemory()
+memory = ReplayMemory.ReplayMemory()
 
 file_name = cfg['experiment']['output']
 file_output = open("../" + file_name + ".dat","w")
@@ -179,7 +153,7 @@ file_output = open("../" + file_name + ".dat","w")
 
 print("# Run episodes")
 # Run episodes
-for ep in range(episodes):
+for ep in range(cfg_agt['episodes']):
 
   episode_reward = 0
   if (ep%10 == 0):
@@ -219,10 +193,10 @@ for ep in range(episodes):
     if (not test):
     # Train
       if memory.size() > 1000:
-        steps_in_replay = replay_steps//size_batch
+        steps_in_replay = cfg_agt['replay_steps']//cfg_agt['batch_size']
         for kk in range(steps_in_replay):
           # Get minibatch from replay memory
-          obs, act, rew, nobs = memory.sample_minibatch(size_batch)
+          obs, act, rew, nobs = memory.sample_minibatch(cfg_agt['batch_size'])
           if enable_ensemble:
             ## TRAIN ACTOR CRITIC
             td_mounted = []
@@ -232,7 +206,7 @@ for ep in range(episodes):
               nextq = ensemble[ne][1].get_value(nobs)
 
               # Calculate target using SARSA
-              target = [rew[ii] + gamma * nextq[ii] for ii in range(len(nextq))]
+              target = [rew[ii] + cfg_ens[ne]['gamma'] * nextq[ii] for ii in range(len(nextq))]
 
               # Update critic using target and actor using gradient
               ensemble[ne][0].train(obs, act, target)
@@ -257,7 +231,7 @@ for ep in range(episodes):
             nextq = target_network.get_value(nobs)
 
             # Calculate target using SARSA
-            target = [rew[ii] + gamma * nextq[ii] for ii in range(len(nextq))]
+            target = [rew[ii] + cfg_ens[0]['gamma'] * nextq[ii] for ii in range(len(nextq))]
 
             # Update critic using target and actor using gradient
             network.train(obs, act, target)

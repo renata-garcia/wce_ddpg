@@ -3,7 +3,7 @@ experiment:
   runs: 1
   run_offset: 0
   trials: 0
-  steps: 100000
+  steps: 100
   rate: 0
   test_interval: 10
   output: agent_pd_tau_replay_ddpg_tensorflow_sincos16good_j0_data_center_euclidian_distance_0.25_data_center_a0.01_
