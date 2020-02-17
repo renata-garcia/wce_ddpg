@@ -7,20 +7,18 @@
 import os
 # os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 
-import math, time, numpy as np
+import yaml
+import math, numpy as np
 import gym
 from gym.envs.registration import register
 
-# TODO: checar esses imports
-# Imports
 from gym import logger as gymlogger
 gymlogger.set_level(40) #error only
 import tensorflow as tf
-from keras.layers import Dense, Concatenate, average
 import random
 import sys
-from scipy import stats
-import scipy
+
+import DDPGNetwork, DDPGNetworkNode, WeightCritic
 
 # Register environmnent instantiation. Every configuration file
 # requires a different instantiation, as Gym does not allow passing
@@ -29,6 +27,19 @@ import scipy
 # specifies the environment to be used.
 print(sys.argv)
 print(len(sys.argv))
+
+with open("../cfg/agent_pd_3good_j0.yaml", 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+
+for section in cfg:
+    print(section)
+print(cfg['experiment'])
+print(cfg['experiment']['agent'])
+#TODO python yaml count elements
+
+if cfg['experiment']['runs'] > 1:
+  print("Experiment/runs > 1 will not save outfile file in correct manner!!!")
+  exit(-1)
 
 if len(sys.argv) == 1:
   enable_ensemble = 1
@@ -57,127 +68,8 @@ print("simple_ddpg: ", enable_ensemble, "lr_actor: ", lr_actor, ", lr_critic: ",
       ", replay_steps: ", replay_steps, ", size_batch: ", size_batch, ", gamma: ", gamma, "\n",
       ", tau: ", tau, ", episodes: ", episodes)
 
-# DDPG helper functions
-
 """DDPG actor-critic network with two hidden layers"""
 
-class DDPGNetwork():
-  def __init__(self, sess, obs, act, a_max):
-    print(obs, act, a_max)
-    self.session = sess
-    self.layer1_size = 400
-    self.layer2_size = 300
-
-    prev_vars = len(tf.trainable_variables())
-
-    # Actor network
-    self.s_in = tf.placeholder(tf.float32, shape=(None, obs), name='s_in')
-    ha1 = Dense(self.layer1_size, activation='relu', name='h_actor1')(self.s_in)
-    ha2 = Dense(self.layer2_size, activation='relu', name='h_actor2')(ha1)
-    self.a_out = a_max * Dense(act, activation='tanh', name='a_out')(ha2)
-    theta = tf.trainable_variables()[prev_vars:]
-
-    # Critic network
-    self.a_in = tf.placeholder_with_default(tf.stop_gradient(self.a_out), shape=(None, act), name='a_in')
-    hq1 = Dense(self.layer1_size, activation='relu', name='h_critic1')(self.s_in)
-    hc = Concatenate()([hq1, self.a_in])
-    hq2 = Dense(self.layer2_size, activation='relu', name='h_critic2')(hc)
-    self.q = Dense(1, activation='linear', name='q')(hq2)
-
-    # Actor network update
-    dq_da = tf.gradients(self.q, self.a_in, name='dq_da')[0]
-    dq_dtheta = tf.gradients(self.a_out, theta, -dq_da, name='dq_dtheta')
-    self.a_update = tf.train.AdamOptimizer(lr_actor).apply_gradients(zip(dq_dtheta, theta), name='a_update')
-
-    # Critic network update
-    self.q_target = tf.placeholder(tf.float32, shape=(None, 1), name='target')
-    q_loss = tf.losses.mean_squared_error(self.q_target, self.q)
-    self.q_update = tf.train.AdamOptimizer(lr_critic).minimize(q_loss, name='q_update')
-
-  def get_value(self, obs, act=None):
-    if act:
-      return self.session.run(self.q, {self.s_in: obs, self.a_in: act})
-    else:
-      return self.session.run(self.q, {self.s_in: obs})
-
-  def train(self, obs, act, q_target, noise=None):
-    # Train critic
-    self.session.run(self.q_update, {self.s_in: obs, self.a_in: act, self.q_target: q_target})
-
-    # Train actor
-    self.session.run(self.a_update, {self.s_in: obs})
-
-# DDPG helper functions
-
-"""DDPG actor-critic network with two hidden layers"""
-
-class DDPGNetworkNode():
-  def __init__(self, sess, sin, qtarget, act, a_max):
-    self.session = sess
-    self.s_in = sin
-    self.q_target = qtarget
-
-    self.layer1_size = 400
-    self.layer2_size = 300
-
-    prev_vars = len(tf.trainable_variables())
-
-    # Actor network
-    ha1 = Dense(self.layer1_size, activation='relu', name='h_actor1')(self.s_in)
-    ha2 = Dense(self.layer2_size, activation='relu', name='h_actor2')(ha1)
-    self.a_out = a_max * Dense(act, activation='tanh', name='a_out')(ha2)
-    theta = tf.trainable_variables()[prev_vars:]
-
-    # Critic network
-    self.a_in = tf.placeholder_with_default(tf.stop_gradient(self.a_out), shape=(None, act), name='a_in')
-    hq1 = Dense(self.layer1_size, activation='relu', name='h_critic1')(self.s_in)
-    hc1 = Concatenate()([hq1, self.a_in])
-    hq2 = Dense(self.layer2_size, activation='relu', name='h_critic2')(hc1)
-    self.q = Dense(1, activation='linear', name='q1')(hq2)
-
-    # Actor network update
-    dq_da = tf.gradients(self.q, self.a_in, name='dq_da')[0]
-    dq_dtheta = tf.gradients(self.a_out, theta, -dq_da, name='dq_dtheta')
-    self.a_update = tf.train.AdamOptimizer(lr_actor).apply_gradients(zip(dq_dtheta, theta), name='a_update')
-
-    # Critic network update
-    q_loss = tf.losses.mean_squared_error(self.q_target, self.q)
-    self.q_update = tf.train.AdamOptimizer(lr_critic).minimize(q_loss, name='q_update')
-
-  def get_value(self, obs):
-    return self.session.run(self.q, {self.s_in: obs})
-
-  def train(self, obs, act, q_target):
-    # Train critic
-    self.session.run(self.q_update, {self.s_in: obs, self.a_in: act, self.q_target: q_target})
-    # Train actor
-    self.session.run(self.a_update, {self.s_in: obs})
-
-
-class WeightCritic():
-  def __init__(self, sess, qin, td):
-    self.session = sess
-    self.q_in = qin
-    self.td_ = td
-
-    q_critic_d = Dense(1, name='q_critic_d')(self.q_in)
-    self.weights_t = tf.get_default_graph().get_tensor_by_name(os.path.split(q_critic_d.name)[0] + '/kernel:0') + 0.0001
-    self.weights_raw = tf.transpose(self.weights_t, name='self.weights_t')
-    self.weights = tf.nn.softmax(self.weights_raw)
-    self.q_critic = tf.reduce_max((self.q_in * self.weights) / tf.reduce_sum(self.weights, 1))
-    print("q_critic_d")
-    print(q_critic_d)
-    print("self.weights")
-    print(self.weights)
-    print("self.q_critic")
-    print(self.q_critic)
-
-    qs_loss = tf.reduce_sum(((self.td_ ** 2) * self.weights) / tf.reduce_sum(self.weights))
-    print(qs_loss)
-    self.qs_update = tf.train.AdamOptimizer(lr_critic).minimize(qs_loss, name='qs_update')
-
-  def train(self, qsin, td):
-    self.session.run(self.qs_update, {self.q_in: qsin, self.td_: td})
 
 """Memory of all past transitions for experience replay"""
 
@@ -230,8 +122,6 @@ register(
   kwargs={"file":"../cfg/pendulum_swingup.yaml"}
 )
 
-
-
 print("# Create Gym environment")
 # Create Gym environment
 env = gym.make("GrlEnv-Pendulum-v0")
@@ -252,42 +142,24 @@ ensemble = [] #DDPGNetworkEnsemble
 if enable_ensemble:
   for i in range(num_ensemble):
     prev_vars = len(tf.trainable_variables())
-    network = DDPGNetworkNode(session, sin, qtarget, env.action_space.shape[0], max_action)
-    target_network = DDPGNetworkNode(session, sin, qtarget, env.action_space.shape[0], max_action)
+    network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env.action_space.shape[0], max_action, lr_actor, lr_critic)
+    target_network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env.action_space.shape[0], max_action, lr_actor, lr_critic)
     vars = tf.trainable_variables()[prev_vars:]
     update_ops = [vars[ix + len(vars) // 2].assign_add(tau * (var.value() - vars[ix + len(vars) // 2].value())) for
                   ix, var in enumerate(vars[0:len(vars) // 2])]
     ensemble.append((network, target_network, update_ops))
-  #TODO refactore
-  qs1 = [[ensemble[0][0].q, ensemble[1][0].q, ensemble[2][0].q]]
+
+  qs1 = []
+  for i in range(num_ensemble):
+    qs1.append(ensemble[i][0].q)
   qs = tf.reshape(qs1, [1,3])
 
   qin = tf.placeholder_with_default(tf.stop_gradient(qs), shape=(None, num_ensemble), name='qin')
-  q_critic = WeightCritic(session, qin, td)
-  # q_critic = average([ensemble[0][0].q, ensemble[1][0].q, ensemble[2][0].q])  # Critic merge
-  # qs = [ensemble[0][0].q, ensemble[1][0].q, ensemble[2][0].q]
-  # print(session.run(tf.nn.softmax(qst)))
-  # sig = tf.sigmoid(qst)
-  # sig_v = tf.get_variable(
-  #   shape=[num_ensemble, 1], initializer=tf.truncated_normal_initializer(stddev=0.01),
-  #   name="weights")
-  # print(sig_v)
-  # qst_l = Concatenate()(qst)
-  # q_critic_d = Dense(1, activation='softmax', name='q_critic_d')(qst_l)
-  # weights = tf.get_default_graph().get_tensor_by_name(os.path.split(q_critic_d.name)[0] + '/kernel:0') + 0.0001
-  # q_critic = tf.reduce_sum((qst*weights)/tf.reduce_sum(weights))
-  # q_loss = tf.reduce_sum(td**2*weights/tf.reduce_sum(weights))
-  # minimize_var = weights
-  # r + gammaQ' - Q'
-  # 64xh
-
-  # print(q_critic_d)
-  # print(weights)
-  # print(q_critic)
+  q_critic = WeightCritic.WeightCritic(session, qin, td, lr_critic)
 else:
     prev_vars = len(tf.trainable_variables())
-    network = DDPGNetwork(session, env.observation_space.shape[0]+1, env.action_space.shape[0], max_action)
-    target_network = DDPGNetwork(session, env.observation_space.shape[0]+1, env.action_space.shape[0], max_action)
+    network = DDPGNetwork.DDPGNetwork(session, env.observation_space.shape[0]+1, env.action_space.shape[0], max_action, lr_actor, lr_critic)
+    target_network = DDPGNetwork.DDPGNetwork(session, env.observation_space.shape[0]+1, env.action_space.shape[0], max_action, lr_actor, lr_critic)
     vars = tf.trainable_variables()[prev_vars:]
     update_ops = [vars[ix + len(vars) // 2].assign_add(tau * (var.value() - vars[ix + len(vars) // 2].value())) for
                   ix, var in enumerate(vars[0:len(vars) // 2])]
@@ -300,6 +172,10 @@ session.run(tf.global_variables_initializer())
 
 # Initialize replay memory
 memory = ReplayMemory()
+
+file_name = cfg['experiment']['output']
+file_output = open("../" + file_name + ".dat","w")
+#TODO verificar nome do dat pros scripts
 
 print("# Run episodes")
 # Run episodes
@@ -319,7 +195,6 @@ for ep in range(episodes):
     # Choose action
     # action = network.get_action([observation])[0]
     if (enable_ensemble):
-      # action = get_action_ensemble(session, ensemble, sin, ensemble[0][0].q, [observation])[0]
       action = get_action_ensemble(session, ensemble, sin, q_critic.q_critic, [observation])[0]
     else:
       action = get_action_ddpg(session, network, sin, [observation])[0]
@@ -373,13 +248,6 @@ for ep in range(episodes):
               else:
                 qsin_mounted = np.concatenate((qsin_mounted, q), axis=1)
                 td_mounted = np.concatenate((td_mounted, td_l), axis=1)
-                # qsin_mounted = np.c_[qsin_mounted, q]
-                # td_mounted = np.c_[td_mounted, td_l]
-            # qsin_matrix = [ qsin_mounted[ii] for ii in range(len(qsin_mounted))]
-            # td_matrix = [ td_mounted[ii] for ii in range(len(td_mounted))]
-            # print(qsin_matrix)
-            # print(len(qsin_matrix))
-            # print(td_matrix)
             q_critic.train(qsin_mounted, td_mounted)
 
           ## END TRAIN ACTOR CRITIC
@@ -402,7 +270,11 @@ for ep in range(episodes):
       break
   if test:
     if ep > 0:
-      print("          ", ep, "          ", ep*100, "          ", "{:.1f}".format(episode_reward))
+      log = "           %d            %d            %0.1f" % (ep, ep*100, episode_reward)
+      file_output.write(log)
+      print(log)
+      # print("          ", ep, "          ", ep*100, "          ", "{:.1f}".format(episode_reward))
 
 
+file_output.close()
 
