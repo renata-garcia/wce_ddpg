@@ -9,10 +9,10 @@ import os
 
 import yaml
 import math, numpy as np
-import base.Environments as env
+import base.Environments as be
 import tensorflow as tf
 
-import DDPGNetwork as dn, DDPGNetworkNode as dn, WeightCritic as wc, ReplayMemory as rm
+import DDPGNetwork, DDPGNetworkNode, WeightCritic, ReplayMemory
 
 # Register environmnent instantiation. Every configuration file
 # requires a different instantiation, as Gym does not allow passing
@@ -84,18 +84,13 @@ def get_action_ensemble(sess, ensemble, sin, q_res, obs):
       biggest_i = i+1
   return acts[biggest_i]
 
-# register(
-#   id='GrlEnv-Pendulum-v0',
-#   entry_point='grlenv.grlenv:GrlEnv',
-#   kwargs={"file":"../cfg/pendulum_swingup.yaml"}
-# )
-#
-# print("# Create Gym environment")
+
+print("# Create Gym environment")
 # # Create Gym environment
-# env = gym.make("GrlEnv-Pendulum-v0")
-env.Environments('GrlEnv-Pendulum-v0')
+# env = be.Environments('GrlEnv-Pendulum-v0')
+env = be.Environments('GrlEnv-CartPole-v0')
 print("obs--------------------______")
-print(env.observation_space.shape[0])
+print(env.get_obs())
 print("# Set up Tensorflow")
 # Set up Tensorflow
 session = tf.Session()
@@ -103,7 +98,7 @@ session = tf.Session()
 print("# Create networks")
 # Create networks
 max_action = 3
-sin = tf.placeholder(tf.float32, shape=(None, env.observation_space.shape[0]+1), name='s_in')
+sin = tf.placeholder(tf.float32, shape=(None, env.get_obs()+1), name='s_in')
 qtarget = tf.placeholder(tf.float32, shape=(None, 1), name='target')
 td = tf.placeholder(tf.float32, shape=(None, num_ensemble), name='td')
 
@@ -111,8 +106,8 @@ ensemble = [] #DDPGNetworkEnsemble
 if enable_ensemble:
   for ne in range(num_ensemble):
     prev_vars = len(tf.trainable_variables())
-    network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env.action_space.shape[0], max_action, cfg_ens[ne]['lr_actor'], cfg_ens[ne]['lr_critic'])
-    target_network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env.action_space.shape[0], max_action, cfg_ens[ne]['lr_actor'], cfg_ens[ne]['lr_critic'])
+    network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env._env.action_space.shape[0], max_action, cfg_ens[ne]['lr_actor'], cfg_ens[ne]['lr_critic'])
+    target_network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env._env.action_space.shape[0], max_action, cfg_ens[ne]['lr_actor'], cfg_ens[ne]['lr_critic'])
     vars = tf.trainable_variables()[prev_vars:]
     tau = cfg_ens[ne]['tau']
     update_ops = [vars[ix + len(vars) // 2].assign_add(tau * (var.value() - vars[ix + len(vars) // 2].value())) for
@@ -128,8 +123,8 @@ if enable_ensemble:
   q_critic = WeightCritic.WeightCritic(session, qin, td, 0.0001) #TODO test
 else:
     prev_vars = len(tf.trainable_variables())
-    network = DDPGNetwork.DDPGNetwork(session, env.observation_space.shape[0]+1, env.action_space.shape[0], max_action, cfg_ens[0]['lr_actor'], cfg_ens[0]['lr_critic'])
-    target_network = DDPGNetwork.DDPGNetwork(session, env.observation_space.shape[0]+1, env.action_space.shape[0], max_action, cfg_ens[0]['lr_actor'], cfg_ens[0]['lr_critic'])
+    network = DDPGNetwork.DDPGNetwork(session, env._env.observation_space.shape[0]+1, env._env.action_space.shape[0], max_action, cfg_ens[0]['lr_actor'], cfg_ens[0]['lr_critic'])
+    target_network = DDPGNetwork.DDPGNetwork(session, env._env.observation_space.shape[0]+1, env._env.action_space.shape[0], max_action, cfg_ens[0]['lr_actor'], cfg_ens[0]['lr_critic'])
     vars = tf.trainable_variables()[prev_vars:]
     tau = cfg_agt[0]['tau']
     update_ops = [vars[ix + len(vars) // 2].assign_add(tau * (var.value() - vars[ix + len(vars) // 2].value())) for
@@ -157,7 +152,7 @@ for ep in range(cfg_agt['episodes']):
     test = 1
   else:
     test = 0
-  observation = env.reset(test)
+  observation = env._env.reset(test)
   observation = [math.cos(observation[0]), math.sin(observation[0]), observation[1]]
 
   # Loop over control steps within an episode
@@ -177,7 +172,7 @@ for ep in range(cfg_agt['episodes']):
 
     # Take step
     prev_obs = observation
-    observation, reward, done, info = env.step(action)
+    observation, reward, done, info = env._env.step(action)
     observation = [math.cos(observation[0]), math.sin(observation[0]), observation[1]]
 
     episode_reward += reward
