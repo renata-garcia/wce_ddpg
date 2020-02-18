@@ -9,14 +9,10 @@ import os
 
 import yaml
 import math, numpy as np
-import gym
-from gym.envs.registration import register
-
-from gym import logger as gymlogger
-gymlogger.set_level(40) #error only
+import base.Environments as env
 import tensorflow as tf
 
-import DDPGNetwork, DDPGNetworkNode, WeightCritic, ReplayMemory
+import DDPGNetwork as dn, DDPGNetworkNode as dn, WeightCritic as wc, ReplayMemory as rm
 
 # Register environmnent instantiation. Every configuration file
 # requires a different instantiation, as Gym does not allow passing
@@ -88,15 +84,16 @@ def get_action_ensemble(sess, ensemble, sin, q_res, obs):
       biggest_i = i+1
   return acts[biggest_i]
 
-register(
-  id='GrlEnv-Pendulum-v0',
-  entry_point='grlenv.grlenv:GrlEnv',
-  kwargs={"file":"../cfg/pendulum_swingup.yaml"}
-)
-
-print("# Create Gym environment")
-# Create Gym environment
-env = gym.make("GrlEnv-Pendulum-v0")
+# register(
+#   id='GrlEnv-Pendulum-v0',
+#   entry_point='grlenv.grlenv:GrlEnv',
+#   kwargs={"file":"../cfg/pendulum_swingup.yaml"}
+# )
+#
+# print("# Create Gym environment")
+# # Create Gym environment
+# env = gym.make("GrlEnv-Pendulum-v0")
+env.Environments('GrlEnv-Pendulum-v0')
 print("obs--------------------______")
 print(env.observation_space.shape[0])
 print("# Set up Tensorflow")
