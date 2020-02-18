@@ -87,7 +87,7 @@ def get_action_ensemble(sess, ensemble, sin, q_res, obs):
 
 print("# Create Gym environment")
 # # Create Gym environment
-# env = be.Environments('GrlEnv-Pendulum-v0')
+#env = be.Environments('GrlEnv-Pendulum-v0')
 env = be.Environments('GrlEnv-CartPole-v0')
 print("obs--------------------______")
 print(env.get_obs())
@@ -98,7 +98,7 @@ session = tf.Session()
 print("# Create networks")
 # Create networks
 max_action = 3
-sin = tf.placeholder(tf.float32, shape=(None, env.get_obs()+1), name='s_in')
+sin = tf.placeholder(tf.float32, shape=(None, env.get_obs()), name='s_in')
 qtarget = tf.placeholder(tf.float32, shape=(None, 1), name='target')
 td = tf.placeholder(tf.float32, shape=(None, num_ensemble), name='td')
 
@@ -117,10 +117,10 @@ if enable_ensemble:
   qs1 = []
   for i in range(num_ensemble):
     qs1.append(ensemble[i][0].q)
-  qs = tf.reshape(qs1, [1,3])
+  qs = tf.reshape(qs1, [1,num_ensemble])
 
   qin = tf.placeholder_with_default(tf.stop_gradient(qs), shape=(None, num_ensemble), name='qin')
-  q_critic = WeightCritic.WeightCritic(session, qin, td, 0.0001) #TODO test
+  q_critic = WeightCritic.WeightCritic(session, qin, td, 0.0001, num_ensemble) #TODO test
 else:
     prev_vars = len(tf.trainable_variables())
     network = DDPGNetwork.DDPGNetwork(session, env._env.observation_space.shape[0]+1, env._env.action_space.shape[0], max_action, cfg_ens[0]['lr_actor'], cfg_ens[0]['lr_critic'])
@@ -152,15 +152,15 @@ for ep in range(cfg_agt['episodes']):
     test = 1
   else:
     test = 0
-  observation = env._env.reset(test)
-  observation = [math.cos(observation[0]), math.sin(observation[0]), observation[1]]
+  observation = env._env.reset(test) #TODO not random init [0. 0.]
+  observation = env.get_obs_trig(observation)
 
   # Loop over control steps within an episode
   noise = 0
   while True:
     # Choose action
     # action = network.get_action([observation])[0]
-    if (enable_ensemble):
+    if enable_ensemble:
       action = get_action_ensemble(session, ensemble, sin, q_critic.q_critic, [observation])[0]
     else:
       action = get_action_ddpg(session, network, sin, [observation])[0]
@@ -173,7 +173,7 @@ for ep in range(cfg_agt['episodes']):
     # Take step
     prev_obs = observation
     observation, reward, done, info = env._env.step(action)
-    observation = [math.cos(observation[0]), math.sin(observation[0]), observation[1]]
+    observation = env.get_obs_trig(observation)
 
     episode_reward += reward
     reward = reward * 0.01

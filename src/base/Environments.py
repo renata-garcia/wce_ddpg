@@ -1,10 +1,11 @@
 import gym
 from gym.envs.registration import register
+import math
 
 from gym import logger as gymlogger
 gymlogger.set_level(40) #error only
 
-class Environments():
+class Environments(): #TODO separe files and use design patterns
   def __init__(self, id):
     self._id = id
     self._env = 0
@@ -32,4 +33,15 @@ class Environments():
       return self.env
 
   def get_obs(self):
-      return self._env.observation_space.shape[0]
+    # if self._id == "GrlEnv-Pendulum-v0":
+    #   return self._env.observation_space.shape[0] + 1
+    # elif self._id == "GrlEnv-CartPole-v0":
+      return self._env.observation_space.shape[0] + 1
+
+  def get_obs_trig(self, observation):
+    if self._id == "GrlEnv-Pendulum-v0":
+      return [math.cos(observation[0]), math.sin(observation[0]), observation[1]]
+    elif self._id == "GrlEnv-CartPole-v0":
+      # [position of cart, velocity of cart, angle of pole, rotation rate of pole]
+      return [observation[0], observation[1], math.cos(observation[2]), math.sin(observation[2]), observation[3]] #TODO confirme with grl
+
