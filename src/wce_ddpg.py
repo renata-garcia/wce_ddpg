@@ -20,7 +20,7 @@ import DDPGNetwork, DDPGNetworkNode, WeightCritic, ReplayMemory
 # The configuration must define an "environment" tag at the root that
 # specifies the environment to be used.
 
-with open("../cfg/agent_pd_3good_j0.yaml", 'r') as ymlfile:
+with open("../cfg/agent_cp_3good_j0.yaml", 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 if cfg['experiment']['runs'] > 1:
