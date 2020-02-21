@@ -5,7 +5,7 @@
 # grl installed to a path in LD_LIBRARY_PATH and grlpy installed
 # to a path in PYTHON_PATH.
 import os
-# os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 
 import yaml
 import math, numpy as np
@@ -20,7 +20,7 @@ import DDPGNetwork, DDPGNetworkNode, WeightCritic, ReplayMemory
 # The configuration must define an "environment" tag at the root that
 # specifies the environment to be used.
 
-with open("../cfg/agent_pd_3good_j0.yaml", 'r') as ymlfile:
+with open("../cfg/agent_cdp_16good_j0.yaml", 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 if cfg['experiment']['runs'] > 1:
@@ -30,9 +30,9 @@ if cfg['experiment']['runs'] > 1:
 
 num_ensemble = len(cfg['experiment']['agent']['policy']['policy'])
 if num_ensemble == 1:
-  enable_ensemble = 1
+  enable_ensemble = 0
 else:
-  enable_ensemble = 2
+  enable_ensemble = 1
 cfg_ens = []
 
 for x in cfg['experiment']['agent']['policy']['policy']:
@@ -88,7 +88,7 @@ def get_action_ensemble(sess, ensemble, sin, q_res, obs):
 print("# Create Gym environment")
 # # Create Gym environment
 #env = be.Environments('GrlEnv-Pendulum-v0')
-env = be.Environments('GrlEnv-CartPole-v0')
+env = be.Environments('GrlEnv-CartDoublePole-v0')
 print("obs--------------------______")
 print(env.get_obs())
 print("# Set up Tensorflow")
@@ -144,8 +144,11 @@ file_output = open("../" + file_name + ".dat","w")
 #TODO verificar nome do dat pros scripts
 
 print("# Run episodes")
+episodes = cfg_agt['episodes']
+replay_steps = cfg_agt['replay_steps']
+batch_size = cfg_agt['batch_size']
 # Run episodes
-for ep in range(cfg_agt['episodes']):
+for ep in range(episodes):
 
   episode_reward = 0
   if (ep%10 == 0):
@@ -153,6 +156,7 @@ for ep in range(cfg_agt['episodes']):
   else:
     test = 0
   observation = env._env.reset(test) #TODO not random init [0. 0.]
+  print(observation)
   observation = env.get_obs_trig(observation)
 
   # Loop over control steps within an episode
@@ -173,6 +177,7 @@ for ep in range(cfg_agt['episodes']):
     # Take step
     prev_obs = observation
     observation, reward, done, info = env._env.step(action)
+    print(observation)
     observation = env.get_obs_trig(observation)
 
     episode_reward += reward
@@ -185,10 +190,10 @@ for ep in range(cfg_agt['episodes']):
     if (not test):
     # Train
       if memory.size() > 1000:
-        steps_in_replay = cfg_agt['replay_steps']//cfg_agt['batch_size']
+        steps_in_replay = replay_steps//batch_size
         for kk in range(steps_in_replay):
           # Get minibatch from replay memory
-          obs, act, rew, nobs = memory.sample_minibatch(cfg_agt['batch_size'])
+          obs, act, rew, nobs = memory.sample_minibatch(batch_size)
           if enable_ensemble:
             ## TRAIN ACTOR CRITIC
             td_mounted = []

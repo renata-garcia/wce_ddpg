@@ -25,6 +25,13 @@ class Environments(): #TODO separe files and use design patterns
         kwargs={"file": "../cfg/cart_pole.yaml"}
       )
       self._env =  gym.make("GrlEnv-CartPole-v0")
+    elif id == "GrlEnv-CartDoublePole-v0":
+      register(
+        id='GrlEnv-CartDoublePole-v0',
+        entry_point='grlenv.grlenv:GrlEnv',
+        kwargs={"file": "../cfg/cart_double_pole.yaml"}
+      )
+      self._env =  gym.make("GrlEnv-CartDoublePole-v0")
     else:
       print("Environments wrong id===========================")
       exit(-1)
@@ -43,5 +50,7 @@ class Environments(): #TODO separe files and use design patterns
       return [math.cos(observation[0]), math.sin(observation[0]), observation[1]]
     elif self._id == "GrlEnv-CartPole-v0":
       # [position of cart, velocity of cart, angle of pole, rotation rate of pole]
-      return [observation[0], observation[1], math.cos(observation[2]), math.sin(observation[2]), observation[3]] #TODO confirme with grl
+      return [observation[0], math.cos(observation[1]), math.sin(observation[1]), observation[2], observation[3]] #TODO confirme with grl
+    elif self._id == "GrlEnv-CartDoublePole-v0":
+      return [observation[0], math.cos(observation[1]), math.sin(observation[1]), observation[2], observation[3]] #TODO confirme with grl
 
