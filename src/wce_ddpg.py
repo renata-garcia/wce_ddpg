@@ -20,7 +20,7 @@ import DDPGNetwork, DDPGNetworkNode, WeightCritic, ReplayMemory
 # The configuration must define an "environment" tag at the root that
 # specifies the environment to be used.
 
-with open("../cfg/agent_cdp_16good_j0.yaml", 'r') as ymlfile:
+with open("../cfg/agent_pd_16good_j0.yaml", 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 if cfg['experiment']['runs'] > 1:
@@ -87,8 +87,8 @@ def get_action_ensemble(sess, ensemble, sin, q_res, obs):
 
 print("# Create Gym environment")
 # # Create Gym environment
-#env = be.Environments('GrlEnv-Pendulum-v0')
-env = be.Environments('GrlEnv-CartDoublePole-v0')
+env = be.Environments('GrlEnv-Pendulum-v0')
+#env = be.Environments('GrlEnv-CartDoublePole-v0')
 print("obs--------------------______")
 print(env.get_obs())
 print("# Set up Tensorflow")
@@ -156,7 +156,6 @@ for ep in range(episodes):
   else:
     test = 0
   observation = env._env.reset(test) #TODO not random init [0. 0.]
-  print(observation)
   observation = env.get_obs_trig(observation)
 
   # Loop over control steps within an episode
@@ -177,7 +176,6 @@ for ep in range(episodes):
     # Take step
     prev_obs = observation
     observation, reward, done, info = env._env.step(action)
-    print(observation)
     observation = env.get_obs_trig(observation)
 
     episode_reward += reward
@@ -200,6 +198,7 @@ for ep in range(episodes):
             qsin_mounted = []
             for ne in range(num_ensemble):
               # Calculate Q value of next state
+              q = ensemble[ne][0].get_value(nobs)
               nextq = ensemble[ne][1].get_value(nobs)
 
               # Calculate target using SARSA
@@ -208,10 +207,10 @@ for ep in range(episodes):
               # Update critic using target and actor using gradient
               ensemble[ne][0].train(obs, act, target)
 
+              #Update
               session.run(ensemble[ne][2])
 
               # Calculate Q value of state
-              q = ensemble[ne][0].get_value(nobs)
               td_l = [target[ii] - q[ii] for ii in range(len(q))]
               if len(td_mounted) == 0:
                 qsin_mounted = q

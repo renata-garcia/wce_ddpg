@@ -49,8 +49,9 @@ class Environments(): #TODO separe files and use design patterns
     if self._id == "GrlEnv-Pendulum-v0":
       return [math.cos(observation[0]), math.sin(observation[0]), observation[1]]
     elif self._id == "GrlEnv-CartPole-v0":
-      # [position of cart, velocity of cart, angle of pole, rotation rate of pole]
-      return [observation[0], math.cos(observation[1]), math.sin(observation[1]), observation[2], observation[3]] #TODO confirme with grl
+      # [position of cart, angle of pole, velocity of cart, rotation rate of pole]
+      return [observation[0], math.cos(observation[1]), math.sin(observation[1]), observation[2], observation[3]]
     elif self._id == "GrlEnv-CartDoublePole-v0":
+      #pos, ang1, ang2, vel, velang1, velang2  #TODO
       return [observation[0], math.cos(observation[1]), math.sin(observation[1]), observation[2], observation[3]] #TODO confirme with grl
 
