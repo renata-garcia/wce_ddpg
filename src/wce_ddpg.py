@@ -20,7 +20,8 @@ import DDPGNetwork, DDPGNetworkNode, WeightCritic, ReplayMemory
 # The configuration must define an "environment" tag at the root that
 # specifies the environment to be used.
 
-with open("../cfg/agent_pd_16good_j0.yaml", 'r') as ymlfile:
+file_yaml = "../cfg/agent_pd_3good_j0.yaml"
+with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 if cfg['experiment']['runs'] > 1:
@@ -87,8 +88,20 @@ def get_action_ensemble(sess, ensemble, sin, q_res, obs):
 
 print("# Create Gym environment")
 # # Create Gym environment
-env = be.Environments('GrlEnv-Pendulum-v0')
-#env = be.Environments('GrlEnv-CartDoublePole-v0')
+if "pd" in file_yaml:
+  env = be.Environments('GrlEnv-Pendulum-v0')
+  print("GrlEnv-Pendulum-v0")
+elif "cp" in file_yaml:
+  env = be.Environments('GrlEnv-CartPole-v0')
+  print("GrlEnv-CartPole-v0")
+elif "cdp" in file_yaml:
+  env = be.Environments('GrlEnv-CartDoublePole-v0')
+  print("GrlEnv-CartDoublePole-v0")
+else:
+  print("file_yaml:")
+  print(file_yaml)
+  exit(-1)
+
 print("obs--------------------______")
 print(env.get_obs())
 print("# Set up Tensorflow")
@@ -140,7 +153,8 @@ session.run(tf.global_variables_initializer())
 memory = ReplayMemory.ReplayMemory()
 
 file_name = cfg['experiment']['output']
-file_output = open("../" + file_name + ".dat","w")
+file_output = open("../" + file_name + ".dat", "w")
+file_output.close()
 #TODO verificar nome do dat pros scripts
 
 print("# Run episodes")
@@ -241,10 +255,16 @@ for ep in range(episodes):
   if test:
     if ep > 0:
       log = "           %d            %d            %0.1f" % (ep, ep*100, episode_reward)
-      file_output.write(log)
+      file_output = open("../" + file_name + ".dat", "a")
+      file_output.write(log + "\n")
+      file_output.close()
       print(log)
       # print("          ", ep, "          ", ep*100, "          ", "{:.1f}".format(episode_reward))
 
 
+log = "           %d            %d            %0.1f" % (ep, ep * 100, episode_reward)
+file_output = open("../" + file_name + ".dat", "a")
+file_output.write(log + "\n")
 file_output.close()
+print(log)
 

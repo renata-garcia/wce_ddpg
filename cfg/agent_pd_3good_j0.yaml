@@ -3,10 +3,10 @@ experiment:
   runs: 1
   run_offset: 0
   trials: 0
-  steps: 1000
+  steps: 30
   rate: 0
   test_interval: 10
-  output: agent_pd_tau_replay_ddpg_tensorflow_sincos16good_j0_data_center_euclidian_distance_0.25_data_center_a0.01_
+  output: agent_pd_3good_j0_
   save_every: never
 
   agent:
@@ -53,7 +53,7 @@ experiment:
             memory: 0.2
             interval: 100
             tau: 0.01
-            file: ../cfg/network/4layer_tanh_ddpg.py ../../projector/projector/memory experiment/environment/task/action_dims 0.001 0.001 "relu" "linear" 400 300
+            file: ../cfg/network/4layer_tanh_ddpg.py ../../projector/projector/memory experiment/environment/task/action_dims 0.0001 0.001 "relu" "linear" 400 300
             input_layer: s_in, a_in
             output_layer: a_out/Tanh
             init_node: init
@@ -84,7 +84,7 @@ experiment:
             memory: 0.2
             interval: 100
             tau: 0.01
-            file: ../cfg/network/4layer_tanh_ddpg.py ../../projector/projector/memory experiment/environment/task/action_dims 0.001 0.0001 "relu" "linear" 300 200
+            file: ../cfg/network/4layer_tanh_ddpg.py ../../projector/projector/memory experiment/environment/task/action_dims 0.0001 0.0001 "relu" "linear" 300 300
             input_layer: s_in, a_in
             output_layer: a_out/Tanh
             init_node: init
