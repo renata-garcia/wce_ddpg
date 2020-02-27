@@ -58,7 +58,7 @@ for x in cfg['experiment']['agent']['predictor']['predictor']:
 cfg_agt = {}
 cfg_agt['replay_steps'] = cfg['experiment']['agent']['replay_steps']
 cfg_agt['batch_size'] = cfg['experiment']['agent']['batch_size']
-cfg_agt['episodes'] = cfg['experiment']['steps']  #TODO normalize
+cfg_agt['steps'] = cfg['experiment']['steps']  #TODO normalize
 
 
 def get_action_ddpg(sess, network, sin, obs):
@@ -88,14 +88,18 @@ def get_action_ensemble(sess, ensemble, sin, q_res, obs):
 
 print("# Create Gym environment")
 # # Create Gym environment
+steps_p_ep = 0
 if "pd" in file_yaml:
   env = be.Environments('GrlEnv-Pendulum-v0')
+  steps_p_ep = 100
   print("GrlEnv-Pendulum-v0")
 elif "cp" in file_yaml:
   env = be.Environments('GrlEnv-CartPole-v0')
+  steps_p_ep = 200
   print("GrlEnv-CartPole-v0")
 elif "cdp" in file_yaml:
   env = be.Environments('GrlEnv-CartDoublePole-v0')
+  steps_p_ep = 200
   print("GrlEnv-CartDoublePole-v0")
 else:
   print("file_yaml:")
@@ -158,12 +162,12 @@ file_output.close()
 #TODO verificar nome do dat pros scripts
 
 print("# Run episodes")
-episodes = cfg_agt['episodes']
+episodes = int(cfg_agt['steps']/steps_p_ep)
 replay_steps = cfg_agt['replay_steps']
 batch_size = cfg_agt['batch_size']
+
 # Run episodes
 for ep in range(episodes):
-
   episode_reward = 0
   if (ep%10 == 0):
     test = 1
