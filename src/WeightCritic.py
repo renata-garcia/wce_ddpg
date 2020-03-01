@@ -19,9 +19,13 @@ class WeightCritic():
     self.q_critic = tf.reduce_sum((self.q_in * self.weights))
 
     #TODO testar retirando o treinamento, resultado deve ser igual a ter média
-    qs_loss = tf.reduce_sum(((self.td_ ** 2) * self.weights)) #TODO verificar size/len
-    self.qs_update = tf.train.AdamOptimizer(self.lr_critic).minimize(qs_loss, name='qs_update')
+    self.qs_loss_int = ((self.td_ ** 2) * self.weights) #TODO verificar size/len
+    self.qs_loss_int = (self.weights)  # TODO verificar size/len
+    self.qs_loss = tf.reduce_sum(((self.td_ ** 2) * self.weights)) #TODO verificar size/len
+    self.qs_update = tf.train.AdamOptimizer(self.lr_critic).minimize(self.qs_loss, name='qs_update')
 
   def train(self, qsin, td): #TODO qsin no need, remove
-    self.session.run(self.qs_update, {self.q_in: qsin, self.td_: td})
+    r_up, r_ql = self.session.run([self.qs_update, self.qs_loss_int], {self.q_in: qsin, self.td_: td})
+    print(r_ql.shape)
+    print(r_ql)
 
