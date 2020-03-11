@@ -26,6 +26,6 @@ class WeightCritic():
 
   def train(self, qsin, td): #TODO qsin no need, remove
     r_up, r_ql = self.session.run([self.qs_update, self.qs_loss_int], {self.q_in: qsin, self.td_: td})
-    print(r_ql.shape)
-    print(r_ql)
+    #print(r_ql.shape)
+    #print(r_ql)
 

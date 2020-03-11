@@ -5,12 +5,14 @@
 # grl installed to a path in LD_LIBRARY_PATH and grlpy installed
 # to a path in PYTHON_PATH.
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 
 import yaml
-import math, numpy as np
+import numpy as np
 import base.Environments as be
 import tensorflow as tf
+from random import random
+from random import seed
 
 import DDPGNetwork, DDPGNetworkNode, WeightCritic, ReplayMemory
 
@@ -20,7 +22,7 @@ import DDPGNetwork, DDPGNetworkNode, WeightCritic, ReplayMemory
 # The configuration must define an "environment" tag at the root that
 # specifies the environment to be used.
 
-file_yaml = "../cfg/agent_pd_3good_j0.yaml"
+file_yaml = "../cfg/agent_cdp_16good_j0.yaml"
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
@@ -34,6 +36,8 @@ if num_ensemble == 1:
   enable_ensemble = 0
 else:
   enable_ensemble = 1
+print("num_ensemble:")
+print(num_ensemble)
 cfg_ens = []
 
 for x in cfg['experiment']['agent']['policy']['policy']:
@@ -84,6 +88,10 @@ def get_action_ensemble(sess, ensemble, sin, q_res, obs):
       biggest_v = qs[i+1]
       biggest_i = i+1
   return acts[biggest_i]
+
+
+def get_action_rnd_policy(sess, network, sin, obs):
+  return sess.run(network[0].a_out, {sin: obs})
 
 
 print("# Create Gym environment")
@@ -143,7 +151,7 @@ else:
     network = DDPGNetwork.DDPGNetwork(session, env._env.observation_space.shape[0]+1, env._env.action_space.shape[0], max_action, cfg_ens[0]['lr_actor'], cfg_ens[0]['lr_critic'])
     target_network = DDPGNetwork.DDPGNetwork(session, env._env.observation_space.shape[0]+1, env._env.action_space.shape[0], max_action, cfg_ens[0]['lr_actor'], cfg_ens[0]['lr_critic'])
     vars = tf.trainable_variables()[prev_vars:]
-    tau = cfg_agt[0]['tau']
+    tau = cfg_ens[0]['tau']
     update_ops = [vars[ix + len(vars) // 2].assign_add(tau * (var.value() - vars[ix + len(vars) // 2].value())) for
                   ix, var in enumerate(vars[0:len(vars) // 2])]
 
@@ -166,11 +174,15 @@ episodes = int(cfg_agt['steps']/steps_p_ep)
 replay_steps = cfg_agt['replay_steps']
 batch_size = cfg_agt['batch_size']
 
+seed(1234)
 # Run episodes
 for ep in range(episodes):
   episode_reward = 0
   if (ep%10 == 0):
     test = 1
+    policy_rnd = int(random()*num_ensemble)
+    # print(policy_rnd)
+    # print(ep)
   else:
     test = 0
   observation = env._env.reset(test) #TODO not random init [0. 0.]
@@ -182,7 +194,10 @@ for ep in range(episodes):
     # Choose action
     # action = network.get_action([observation])[0]
     if enable_ensemble:
-      action = get_action_ensemble(session, ensemble, sin, q_critic.q_critic, [observation])[0]
+      if test:
+        action = get_action_ensemble(session, ensemble, sin, q_critic.q_critic, [observation])[0]
+      else:
+        action = get_action_rnd_policy(session, ensemble[policy_rnd], sin, [observation])[0]
     else:
       action = get_action_ddpg(session, network, sin, [observation])[0]
 
@@ -266,9 +281,9 @@ for ep in range(episodes):
       # print("          ", ep, "          ", ep*100, "          ", "{:.1f}".format(episode_reward))
 
 
-log = "           %d            %d            %0.1f" % (ep, ep * 100, episode_reward)
-file_output = open("../" + file_name + ".dat", "a")
-file_output.write(log + "\n")
-file_output.close()
-print(log)
+# log = "           %d            %d            %0.1f" % (ep, ep * 100, episode_reward)
+# file_output = open("../" + file_name + ".dat", "a")
+# file_output.write(log + "\n")
+# file_output.close()
+# print(log)
 

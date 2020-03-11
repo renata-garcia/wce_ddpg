@@ -12,8 +12,8 @@ experiment:
   agent:
     type: agent/replay
     memory_size: 100000
-    replay_steps: 64
-    batch_size: 16
+    replay_steps: 128
+    batch_size: 64
     observation_steps: 1000
     threads: 0
     policy:

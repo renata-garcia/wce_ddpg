@@ -53,5 +53,5 @@ class Environments(): #TODO separe files and use design patterns
       return [observation[0], math.cos(observation[1]), math.sin(observation[1]), observation[2], observation[3]]
     elif self._id == "GrlEnv-CartDoublePole-v0":
       #pos, ang1, ang2, vel, velang1, velang2  #TODO
-      return [observation[0], math.cos(observation[1]), math.sin(observation[1]), observation[2], observation[3]] #TODO confirme with grl
+      return [observation[0], math.cos(observation[1]), math.sin(observation[1]), math.cos(observation[2]), math.sin(observation[2]), observation[3], observation[4], observation[5]]
 
