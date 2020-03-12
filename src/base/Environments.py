@@ -40,10 +40,10 @@ class Environments(): #TODO separe files and use design patterns
       return self.env
 
   def get_obs(self):
-    # if self._id == "GrlEnv-Pendulum-v0":
-    #   return self._env.observation_space.shape[0] + 1
-    # elif self._id == "GrlEnv-CartPole-v0":
+    if (self._id == "GrlEnv-Pendulum-v0") or (self._id == "GrlEnv-CartPole-v0"):
       return self._env.observation_space.shape[0] + 1
+    elif self._id == "GrlEnv-CartDoublePole-v0":
+      return self._env.observation_space.shape[0] + 2
 
   def get_obs_trig(self, observation):
     if self._id == "GrlEnv-Pendulum-v0":

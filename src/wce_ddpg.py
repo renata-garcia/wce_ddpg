@@ -65,8 +65,12 @@ cfg_agt['batch_size'] = cfg['experiment']['agent']['batch_size']
 cfg_agt['steps'] = cfg['experiment']['steps']  #TODO normalize
 
 
-def get_action_ddpg(sess, network, sin, obs):
-  return sess.run(network.a_out, {network.s_in: obs})
+def get_action_ddpg(sess, network, obs):
+  rnd_policy = random()
+  if (rnd_policy < 0.05):
+      return (2*rnd_policy - 1 ) * max_action
+  else:
+    return sess.run(network.a_out, {network.s_in: obs})
 
 
 def get_action_ensemble(sess, ensemble, sin, q_res, obs):
@@ -97,6 +101,9 @@ def get_action_rnd_policy(sess, network, sin, obs):
 print("# Create Gym environment")
 # # Create Gym environment
 steps_p_ep = 0
+#TODO max action
+#env._env.step(action)
+max_action = 0
 if "pd" in file_yaml:
   env = be.Environments('GrlEnv-Pendulum-v0')
   steps_p_ep = 100
@@ -114,15 +121,17 @@ else:
   print(file_yaml)
   exit(-1)
 
-print("obs--------------------______")
-print(env.get_obs())
+max_action = env._env.action_space.high
+print("max_action: ", max_action)
+
+print("obs--------------------     ", env.get_obs())
+
 print("# Set up Tensorflow")
 # Set up Tensorflow
 session = tf.Session()
 
 print("# Create networks")
 # Create networks
-max_action = 3
 sin = tf.placeholder(tf.float32, shape=(None, env.get_obs()), name='s_in')
 qtarget = tf.placeholder(tf.float32, shape=(None, 1), name='target')
 td = tf.placeholder(tf.float32, shape=(None, num_ensemble), name='td')
