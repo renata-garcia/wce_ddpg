@@ -24,6 +24,7 @@ import DDPGNetwork, DDPGNetworkNode, WeightCritic, ReplayMemory
 # The configuration must define an "environment" tag at the root that
 # specifies the environment to be used.
 
+file_yaml = "../cfg/agent_hc_16good_j0.yaml"
 file_yaml = "../cfg/agent_pd_16good_j0.yaml"
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
@@ -118,6 +119,10 @@ elif "cp" in file_yaml:
 elif "cdp" in file_yaml:
   env = be.Environments('GrlEnv-CartDoublePole-v0')
   steps_p_ep = 200
+  print("GrlEnv-CartDoublePole-v0")
+elif "_hc_" in file_yaml:
+  env = be.Environments('GrlEnv-HalfCheetah-v0')
+  steps_p_ep = 100
   print("GrlEnv-CartDoublePole-v0")
 else:
   print("file_yaml:")
