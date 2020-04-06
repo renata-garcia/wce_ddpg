@@ -1,18 +1,19 @@
-
-
 from keras.layers import Dense, Concatenate
 import tensorflow as tf
+import base.DDPGNetworkConfig as ddpg_cfg
 
+#rm DDPGNetwork.py; touch DDPGNetwork.py; chmod 755 DDPGNetwork.py; nano DDPGNetwork.py;
 """DDPG actor-critic network with two hidden layers"""
 
-class DDPGNetwork():
-  def __init__(self, sess, obs, act, a_max, lractor, lrcritic):
+
+class DDPGNetwork(ddpg_cfg.DDPGNetworkConfig):
+  def __init__(self, sess, obs, act, a_max, config):
     print(obs, act, a_max)
     self.session = sess
     self.layer1_size = 400
     self.layer2_size = 300
-    self.lr_actor = lractor
-    self.lr_critic = lrcritic
+    self._lractor = config._lractor;
+    self._lrcritic = config._lrcritic;
 
     prev_vars = len(tf.trainable_variables())
 

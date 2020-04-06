@@ -5,11 +5,11 @@ import numpy as np
 import os
 
 class WeightCritic():
-  def __init__(self, sess, qin, td, lrcritic, num_ensemble):
+  def __init__(self, sess, qin, td, num_ensemble):
     self.session = sess
     self.q_in = qin
     self.td_ = td
-    self.lr_critic = lrcritic
+    self.lr_critic =  0.0001
 
     q_critic_d = Dense(1, name='q_critic_d')(self.q_in)
     #self.weights_t = tf.get_default_graph().get_tensor_by_name(os.path.split(q_critic_d.name)[0] + '/kernel:0') + 0.001

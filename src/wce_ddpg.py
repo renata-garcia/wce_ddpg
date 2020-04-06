@@ -4,12 +4,14 @@
 # This example must be run from its own directory, with
 # grl installed to a path in LD_LIBRARY_PATH and grlpy installed
 # to a path in PYTHON_PATH.
+#rm wce_ddpg.py; touch wce_ddpg.py; chmod 755 wce_ddpg.py; nano wce_ddpg.py
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 import yaml
 import numpy as np
 import base.Environments as be
+import base.DDPGNetworkConfig as ddpg_cfg
 import tensorflow as tf
 from random import random
 from random import seed
@@ -22,7 +24,7 @@ import DDPGNetwork, DDPGNetworkNode, WeightCritic, ReplayMemory
 # The configuration must define an "environment" tag at the root that
 # specifies the environment to be used.
 
-file_yaml = "../cfg/agent_cdp_16good_j0.yaml"
+file_yaml = "../cfg/agent_pd_16good_j0.yaml"
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
@@ -45,11 +47,12 @@ for x in cfg['experiment']['agent']['policy']['policy']:
   tmp = {}
   tmp['lr_actor'] = float(x['representation']['file'].split()[3])
   tmp['lr_critic'] = float(x['representation']['file'].split()[4])
-  tmp['act1'] = x['representation']['file'].split()[5] #TODO unused
-  tmp['act2'] = x['representation']['file'].split()[6] #TODO unused
-  tmp['layer1'] = x['representation']['file'].split()[7] #TODO unused
-  tmp['layer2'] = x['representation']['file'].split()[8] #TODO unused
-  tmp['tau'] = x['representation']['tau']
+  tmp['act1'] = x['representation']['file'].split()[5]
+  tmp['act2'] = x['representation']['file'].split()[6]
+  tmp['layer1'] = int(x['representation']['file'].split()[7])
+  tmp['layer2'] = int(x['representation']['file'].split()[8])
+  tmp['tau'] =  float(x['representation']['tau'])
+  tmp['config_ddpg'] = ddpg_cfg.DDPGNetworkConfig(tmp['lr_actor'], tmp['lr_critic'], tmp['act1'], tmp['act2'], tmp['layer1'], tmp['layer2'], tmp['tau'])
   cfg_ens.append(tmp)
 
 ii = 0
@@ -140,13 +143,14 @@ ensemble = [] #DDPGNetworkEnsemble
 if enable_ensemble:
   for ne in range(num_ensemble):
     prev_vars = len(tf.trainable_variables())
-    network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env._env.action_space.shape[0], max_action, cfg_ens[ne]['lr_actor'], cfg_ens[ne]['lr_critic'])
-    target_network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env._env.action_space.shape[0], max_action, cfg_ens[ne]['lr_actor'], cfg_ens[ne]['lr_critic'])
+    network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env._env.action_space.shape[0], max_action, cfg_ens[ne]['config_ddpg']) #cfg_ens[ne]['lr_actor'], cfg_ens[ne]['lr_critic'])
+    target_network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env._env.action_space.shape[0], max_action, cfg_ens[ne]['config_ddpg']) #, cfg_ens[ne]['lr_actor'], cfg_ens[ne]['lr_critic'])
     vars = tf.trainable_variables()[prev_vars:]
     tau = cfg_ens[ne]['tau']
     update_ops = [vars[ix + len(vars) // 2].assign_add(tau * (var.value() - vars[ix + len(vars) // 2].value())) for
                   ix, var in enumerate(vars[0:len(vars) // 2])]
     ensemble.append((network, target_network, update_ops))
+    print("Create network ne:", ne, ", lr_actor: ", cfg_ens[ne]['lr_actor'],  ", lr_critic: ", cfg_ens[ne]['lr_critic'])
 
   qs1 = []
   for i in range(num_ensemble):
@@ -154,11 +158,11 @@ if enable_ensemble:
   qs = tf.reshape(qs1, [1,num_ensemble])
 
   qin = tf.placeholder_with_default(tf.stop_gradient(qs), shape=(None, num_ensemble), name='qin')
-  q_critic = WeightCritic.WeightCritic(session, qin, td, 0.0001, num_ensemble) #TODO test
+  q_critic = WeightCritic.WeightCritic(session, qin, td, num_ensemble)
 else:
     prev_vars = len(tf.trainable_variables())
-    network = DDPGNetwork.DDPGNetwork(session, env._env.observation_space.shape[0]+1, env._env.action_space.shape[0], max_action, cfg_ens[0]['lr_actor'], cfg_ens[0]['lr_critic'])
-    target_network = DDPGNetwork.DDPGNetwork(session, env._env.observation_space.shape[0]+1, env._env.action_space.shape[0], max_action, cfg_ens[0]['lr_actor'], cfg_ens[0]['lr_critic'])
+    network = DDPGNetwork.DDPGNetwork(session, env._env.observation_space.shape[0]+1, env._env.action_space.shape[0], max_action, cfg_ens[0]['config_ddpg']) #, cfg_ens[0]['lr_actor'], cfg_ens[0]['lr_critic'])
+    target_network = DDPGNetwork.DDPGNetwork(session, env._env.observation_space.shape[0]+1, env._env.action_space.shape[0], max_action, cfg_ens[0]['config_ddpg']) #, cfg_ens[0]['lr_actor'], cfg_ens[0]['lr_critic'])
     vars = tf.trainable_variables()[prev_vars:]
     tau = cfg_ens[0]['tau']
     update_ops = [vars[ix + len(vars) // 2].assign_add(tau * (var.value() - vars[ix + len(vars) // 2].value())) for

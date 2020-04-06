@@ -1,16 +1,19 @@
 from keras.layers import Dense, Concatenate
 import tensorflow as tf
+import base.DDPGNetworkConfig as ddpg_cfg
 
-class DDPGNetworkNode():
-  def __init__(self, sess, sin, qtarget, act, a_max, lractor, lrcritic):
+#rm DDPGNetworkNode.py touch DDPGNetworkNode.py; chmod 755 DDPGNetworkNode.py; nano DDPGNetworkNode.py
+
+class DDPGNetworkNode(ddpg_cfg.DDPGNetworkConfig):
+  def __init__(self, sess, sin, qtarget, act, a_max, config):
     self.session = sess
     self.s_in = sin
     self.q_target = qtarget
-
-    self.layer1_size = 400
-    self.layer2_size = 300
-    self.lr_actor = lractor
-    self.lr_critic = lrcritic
+    self.lr_actor = config._lractor
+    self.lr_critic = config._lrcritic
+    self.layer1_size = config._layer1
+    self.layer2_size = config._layer2
+    print("DDPGNetworkNode: self.lr_actor: ", self.lr_actor, " self.lr_critic: ", self.lr_critic, " self.layer1_size: ", self.layer1_size, " ,self.layer2_size; ", self.layer2_size)
 
     prev_vars = len(tf.trainable_variables())
 
