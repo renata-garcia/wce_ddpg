@@ -5,7 +5,7 @@
 # grl installed to a path in LD_LIBRARY_PATH and grlpy installed
 # to a path in PYTHON_PATH.
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 import yaml
 import numpy as np
@@ -22,7 +22,7 @@ import DDPGNetwork, DDPGNetworkNode, WeightCritic, ReplayMemory
 # The configuration must define an "environment" tag at the root that
 # specifies the environment to be used.
 
-file_yaml = "../cfg/agent_cdp_16good_j0.yaml"
+file_yaml = "../cfg/agent_hc_16good_j0.yaml"
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
@@ -115,6 +115,10 @@ elif "cp" in file_yaml:
 elif "cdp" in file_yaml:
   env = be.Environments('GrlEnv-CartDoublePole-v0')
   steps_p_ep = 200
+  print("GrlEnv-CartDoublePole-v0")
+elif "_hc_" in file_yaml:
+  env = be.Environments('GrlEnv-HalfCheetah-v0')
+  steps_p_ep = 100
   print("GrlEnv-CartDoublePole-v0")
 else:
   print("file_yaml:")
