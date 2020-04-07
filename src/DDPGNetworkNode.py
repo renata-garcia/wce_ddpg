@@ -13,7 +13,7 @@ class DDPGNetworkNode(ddpg_cfg.DDPGNetworkConfig):
     self.lr_critic = config._lrcritic
     self.layer1_size = config._layer1
     self.layer2_size = config._layer2
-    print("DDPGNetworkNode: self.lr_actor: ", self.lr_actor, " self.lr_critic: ", self.lr_critic, " self.layer1_size: ", self.layer1_size, " ,self.layer2_size; ", self.layer2_size)
+    #print("DDPGNetworkNode: self.lr_actor: ", self.lr_actor, " self.lr_critic: ", self.lr_critic, " self.layer1_size: ", self.layer1_size, " ,self.layer2_size; ", self.layer2_size)
 
     prev_vars = len(tf.trainable_variables())
 
