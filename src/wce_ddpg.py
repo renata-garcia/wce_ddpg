@@ -12,13 +12,13 @@ import yaml
 import numpy as np
 import base.Environments as be
 import base.DDPGNetworkConfig as ddpg_cfg
-#import base.EnsembleConfig as ens_cfg
 import tensorflow as tf
 from random import random
 from random import seed
 
-#import MultiDDPG
-import DDPGNetwork, DDPGNetworkNode, WeightCritic, ReplayMemory
+import DDPGNetwork, DDPGNetworkNode, ReplayMemory
+from CriticAggregation import WeightedByTDError
+from CriticAggregation import WeightedByAverage
 
 def get_action_ddpg(sess, network, obs):
   rnd_policy = random()
@@ -130,7 +130,7 @@ def run_multi_ddpg():
                 else:
                   qsin_mounted = np.concatenate((qsin_mounted, q), axis=1)
                   td_mounted = np.concatenate((td_mounted, td_l), axis=1)
-              q_critic.train(qsin_mounted, td_mounted)
+              q_critic.train(td_mounted) #qsin_mounted, td_mounted) TODO refactore
 
             ## END TRAIN ACTOR CRITIC
             else:
@@ -184,8 +184,6 @@ def create_env():
   return env, steps_p_ep
 
 
-
-
 # Register environmnent instantiation. Every configuration file
 # requires a different instantiation, as Gym does not allow passing
 # parameters to an environment.
@@ -194,6 +192,7 @@ def create_env():
 
 file_yaml = "../cfg/agent_hc_16good_j0.yaml"
 file_yaml = "../cfg/agent_pd_16good_j0.yaml"
+typeCriticAgregattion = "Average"
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
@@ -278,7 +277,13 @@ if enable_ensemble:
   qs = tf.reshape(qs1, [1,num_ensemble])
 
   qin = tf.placeholder_with_default(tf.stop_gradient(qs), shape=(None, num_ensemble), name='qin')
-  q_critic = WeightCritic.WeightCritic(session, qin, td, num_ensemble)
+  #q_critic = WeightCritic.WeightCritic(session, qin, td, num_ensemble)
+  if typeCriticAgregattion == "Average":
+    q_critic = WeightedByAverage(session, qs1, td, num_ensemble)
+  else:
+    q_critic = WeightedByTDError(session, qin, td, num_ensemble)
+  q_critic.buildLayer()
+
 else:
     prev_vars = len(tf.trainable_variables())
     network = DDPGNetwork.DDPGNetwork(session, env._env.observation_space.shape[0]+1, env._env.action_space.shape[0], max_action, cfg_ens[0]['config_ddpg']) #, cfg_ens[0]['lr_actor'], cfg_ens[0]['lr_critic'])
