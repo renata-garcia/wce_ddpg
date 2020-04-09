@@ -4,7 +4,7 @@
 # This example must be run from its own directory, with
 # grl installed to a path in LD_LIBRARY_PATH and grlpy installed
 # to a path in PYTHON_PATH.
-#rm wce_ddpg.py; touch wce_ddpg.py; chmod 755 wce_ddpg.py; nano wce_ddpg.py
+#FILE=wce_ddpg.py; rm $FILE; touch $FILE; chmod 755 $FILE; nano $FILE; ./wce_ddpg.py
 import os
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
@@ -64,8 +64,10 @@ def run_multi_ddpg():
       # print(ep)
     else:
       test = 0
-    observation = env._env.reset(test)  # TODO not random init [0. 0.]
+    #observation = env._env.reset(test)
+    observation = env._env.reset()
     observation = env.get_obs_trig(observation)
+    #print("init environment::observation::", observation)
 
     # Loop over control steps within an episode
     noise = 0
@@ -91,7 +93,7 @@ def run_multi_ddpg():
       observation = env.get_obs_trig(observation)
 
       episode_reward += reward
-      reward = reward * 0.01
+      reward = reward * 0.01 #TODO reward_scale
 
       # Add to replay memory
       memory.add(prev_obs, action, reward, observation)
@@ -161,25 +163,25 @@ def run_multi_ddpg():
 
 def create_env():
   steps_p_ep = 0
+  name_print = "wce_ddpg.py::create_env()::"
   if "pd" in file_yaml:
     env = be.Environments('GrlEnv-Pendulum-v0')
     steps_p_ep = 100
-    print("GrlEnv-Pendulum-v0")
+    print(name_print, "GrlEnv-Pendulum-v0")
   elif "cp" in file_yaml:
     env = be.Environments('GrlEnv-CartPole-v0')
     steps_p_ep = 200
-    print("GrlEnv-CartPole-v0")
+    print(name_print, "GrlEnv-CartPole-v0")
   elif "cdp" in file_yaml:
     env = be.Environments('GrlEnv-CartDoublePole-v0')
     steps_p_ep = 200
-    print("GrlEnv-CartDoublePole-v0")
+    print(name_print, "GrlEnv-CartDoublePole-v0")
   elif "_hc_" in file_yaml:
-    env = be.Environments('GrlEnv-HalfCheetah-v0')
-    steps_p_ep = 100
-    print("GrlEnv-CartDoublePole-v0")
+    env = be.Environments('GrlEnv-HalfCheetah-v2')
+    steps_p_ep = 1000
+    print(name_print, "GrlEnv-HalfCheetah-v2")
   else:
-    print("file_yaml: create_env():")
-    print(file_yaml)
+    print(name_print, file_yaml)
     exit(-1)
   return env, steps_p_ep
 
@@ -191,7 +193,6 @@ def create_env():
 # specifies the environment to be used.
 
 file_yaml = "../cfg/agent_hc_16good_j0.yaml"
-file_yaml = "../cfg/agent_pd_16good_j0.yaml"
 typeCriticAgregattion = "Average"
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
@@ -266,6 +267,7 @@ if enable_ensemble:
     target_network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env._env.action_space.shape[0], max_action, cfg_ens[ne]['config_ddpg']) #, cfg_ens[ne]['lr_actor'], cfg_ens[ne]['lr_critic'])
     vars = tf.trainable_variables()[prev_vars:]
     tau = cfg_ens[ne]['tau']
+    #TODO dividir o tau pelo interval....
     update_ops = [vars[ix + len(vars) // 2].assign_add(tau * (var.value() - vars[ix + len(vars) // 2].value())) for
                   ix, var in enumerate(vars[0:len(vars) // 2])]
     ensemble.append((network, target_network, update_ops))

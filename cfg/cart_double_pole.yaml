@@ -1,5 +1,6 @@
 environment:
   type: environment/modeled
+  discrete_time: 1
   model:
     type: model/dynamical
     control_step: 0.05
