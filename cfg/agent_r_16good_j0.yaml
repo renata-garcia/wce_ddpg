@@ -49,17 +49,48 @@ experiment:
             memory: 0.2
             interval: 1000
             tau: 0.01
-            file: ../cfg/network/4layer_tanh_ddpg.py 11 2 0.0001 0.001 "relu" "linear" 400 300
+            file: ../cfg/network/4layer_tanh_ddpg.py 11 2 0.001 0.0001 "relu" "linear" 400 300
             input_layer: s_in
             output_layer: a_out/Tanh
             init_node: init
             update_node: update
             file_suffix: my_policy_0
+        -
+          type: mapping/policy/action
+          sigma: [1.0]
+          theta: [0.15]
+          decay_rate: 1
+          decay_min: 0
+          renormalize: 1
+          output_min: [ -1, -1]
+          output_max: [ 1, 1]
+          projector:
+            type: projector/pre/normalizing
+            signed: 0
+            input_min: [-1, -1, -1, -1, -0.27, -0.27, -150, -50, -1, -1, 0]
+            input_max: [ 1,  1,  1,  1,  0.27,  0.27,  150,  50,  1,  1, 0]
+            projector:
+              type: projector/identity
+          representation:
+            type: representation/parameterized/tensorflow
+            memory: 0.2
+            interval: 1000
+            tau: 0.01
+            file: ../cfg/network/4layer_tanh_ddpg.py 11 2 0.0001 0.001 "relu" "linear" 400 300
+            input_layer: s_in
+            output_layer: a_out/Tanh
+            init_node: init
+            update_node: update
+            file_suffix: my_policy_1
       value:
         -
           type: mapping/represented
           projector: experiment/agent/policy/policy/0/projector
           representation: experiment/agent/policy/policy/0/representation
+        -
+          type: mapping/represented
+          projector: experiment/agent/policy/policy/1/projector
+          representation: experiment/agent/policy/policy/1/representation
       output_min: [ -1, -1]
       output_max: [ 1, 1]
     predictor:
@@ -85,6 +116,26 @@ experiment:
             projector:
               type: projector/identity
           representation: experiment/agent/policy/policy/0/representation
+        -
+          type: predictor/ddpg
+          gamma: 0.99
+          reward_scale: 0.01
+          observation: s_in
+          action: a_in
+          value: q/BiasAdd
+          target: target
+          critic_update: update
+          actor_update: a_update
+          discretizer: 0
+          obs_projector: experiment/agent/policy/policy/1/projector
+          action_projector:
+            type: projector/pre/normalizing
+            signed: 1
+            input_min: experiment/agent/policy/output_min
+            input_max: experiment/agent/policy/output_max
+            projector:
+              type: projector/identity
+          representation: experiment/agent/policy/policy/1/representation
   test_agent:
     type: agent/fixed
     policy:
@@ -109,7 +160,19 @@ experiment:
           output_max: experiment/agent/policy/policy/0/output_max
           projector: experiment/agent/policy/policy/0/projector
           representation: experiment/agent/policy/policy/0/representation
+        -
+          type: mapping/policy/action
+          sigma: []
+          theta: []
+          decay_rate: 1
+          decay_min: 0
+          renormalize: 1
+          output_min: experiment/agent/policy/policy/1/output_min
+          output_max: experiment/agent/policy/policy/1/output_max
+          projector: experiment/agent/policy/policy/1/projector
+          representation: experiment/agent/policy/policy/1/representation
       value:
         - experiment/agent/policy/value/0
+        - experiment/agent/policy/value/1
       output_min: experiment/agent/policy/output_min
       output_max: experiment/agent/policy/output_max
