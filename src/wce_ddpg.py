@@ -67,7 +67,7 @@ def run_multi_ddpg():
     #observation = env._env.reset(test)
     observation = env._env.reset()
     observation = env.get_obs_trig(observation)
-    #print("init environment::observation::", observation)
+    #print(observation)
 
     # Loop over control steps within an episode
     noise = 0
@@ -97,7 +97,7 @@ def run_multi_ddpg():
 
       # Add to replay memory
       memory.add(prev_obs, action, reward, observation)
-      # print(prev_obs, ":", action, ":", reward, ":", obseration)
+      #print(observation)
 
       if (not test):
         # Train
@@ -159,6 +159,7 @@ def run_multi_ddpg():
         file_output.write(log + "\n")
         file_output.close()
         print(log)
+        #print(observation)
         # print("          ", ep, "          ", ep*100, "          ", "{:.1f}".format(episode_reward))
 
 def create_env():
@@ -181,9 +182,9 @@ def create_env():
     steps_p_ep = 1000
     print(name_print, "GrlEnv-HalfCheetah-v2")
   elif "_r_" in file_yaml:
-    env = be.Environments('Reacher-v2')
-    steps_p_ep = 1000
-    print(name_print, "Reacher-v2")
+    env = be.Environments('Gym-Reacher-v2')
+    steps_p_ep = 500
+    print(name_print, "Gym-Reacher-v2")
   else:
     print(name_print, file_yaml)
     exit(-1)
@@ -196,7 +197,7 @@ def create_env():
 # The configuration must define an "environment" tag at the root that
 # specifies the environment to be used.
 
-file_yaml = "../cfg/agent_hc_16good_j0.yaml"
+file_yaml = "../cfg/agent_r_16good_j0.yaml"
 typeCriticAgregattion = "Average"
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
