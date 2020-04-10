@@ -180,6 +180,10 @@ def create_env():
     env = be.Environments('GrlEnv-HalfCheetah-v2')
     steps_p_ep = 1000
     print(name_print, "GrlEnv-HalfCheetah-v2")
+  elif "_r_" in file_yaml:
+    env = be.Environments('Reacher-v2')
+    steps_p_ep = 1000
+    print(name_print, "Reacher-v2")
   else:
     print(name_print, file_yaml)
     exit(-1)
