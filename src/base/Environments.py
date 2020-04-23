@@ -11,6 +11,7 @@ class Environments(): #TODO separe files and use design patterns
   def __init__(self, id):
     self._id = id
     self._env = 0
+    print("class Environments")
 
     if id == "GrlEnv-Pendulum-v0":
       register(
@@ -48,9 +49,20 @@ class Environments(): #TODO separe files and use design patterns
         kwargs={"file": "../cfg/reacher.yaml"}
       )
       self._env =  gym.make("Reacher-v2")
+    elif id == "Gym-HumanoidStandup-v2":
+      register(
+        id=id,
+        entry_point='grlenv.grlenv:GrlEnv',
+        kwargs={"file": "../cfg/humanoid_standup.yaml"}
+      )
+      print("register")
+      self._env =  gym.make("HumanoidStandup-v2")
     else:
       print("Environments wrong id===========================")
       exit(-1)
+    print("id")
+    print(id)
+    print("..")
 
   def get_env(self):
       return self.env
@@ -60,7 +72,7 @@ class Environments(): #TODO separe files and use design patterns
       return self._env.observation_space.shape[0] + 1
     elif self._id == "GrlEnv-CartDoublePole-v0":
       return self._env.observation_space.shape[0] + 2
-    elif (self._id == "GrlEnv-HalfCheetah-v2") or (self._id == "Gym-Reacher-v2"):
+    else:
       return self._env.observation_space.shape[0]
 
   def get_obs_trig(self, observation):
@@ -72,6 +84,6 @@ class Environments(): #TODO separe files and use design patterns
     elif self._id == "GrlEnv-CartDoublePole-v0":
       #pos, ang1, ang2, vel, velang1, velang2  #TODO
       return [observation[0], math.cos(observation[1]), math.sin(observation[1]), math.cos(observation[2]), math.sin(observation[2]), observation[3], observation[4], observation[5]]
-    elif (self._id == "GrlEnv-HalfCheetah-v2") or (self._id == "Gym-Reacher-v2"):
+    else:
       return observation
 

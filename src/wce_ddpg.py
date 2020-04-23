@@ -185,6 +185,10 @@ def create_env():
     env = be.Environments('Gym-Reacher-v2')
     steps_p_ep = 500
     print(name_print, "Gym-Reacher-v2")
+  elif "_hs_" in file_yaml:
+    env = be.Environments('Gym-HumanoidStandup-v2')
+    steps_p_ep = 1000
+    print(name_print, "Gym-HumanoidStandup-v2")
   else:
     print(name_print, file_yaml)
     exit(-1)
@@ -197,7 +201,7 @@ def create_env():
 # The configuration must define an "environment" tag at the root that
 # specifies the environment to be used.
 
-file_yaml = "../cfg/agent_r_16good_j0.yaml"
+file_yaml = "../cfg/agent_hs_2good_j0.yaml"
 typeCriticAgregattion = "Average"
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
@@ -246,10 +250,10 @@ cfg_agt['steps'] = cfg['experiment']['steps']  #TODO normalize
 print("# Create Gym environment")
 # # Create Gym environment
 #env._env.step(action)
-
 env, steps_p_ep = create_env()
 
 max_action = env._env.action_space.high
+print("min_action: ", env._env.action_space.low)
 print("max_action: ", max_action)
 print("obs--------------------     ", env.get_obs())
 

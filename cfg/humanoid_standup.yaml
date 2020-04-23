@@ -1,0 +1,4 @@
+environment:
+  type: environment/gym
+  id: HumanoidStandup-v2
+  render: 1
