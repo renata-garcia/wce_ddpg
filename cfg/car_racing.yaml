@@ -1,0 +1,4 @@
+environment:
+  type: environment/gym
+  id: CarRacing-v0
+  render: 1
