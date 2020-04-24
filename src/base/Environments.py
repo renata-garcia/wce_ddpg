@@ -73,6 +73,14 @@ class Environments(): #TODO separe files and use design patterns
       )
       print("register")
       self._env =  gym.make("Humanoid-v2")
+    elif id == "Gym-Ant-v2":
+      register(
+        id=id,
+        entry_point='grlenv.grlenv:GrlEnv',
+        kwargs={"file": "../cfg/ant.yaml"}
+      )
+      print("register")
+      self._env =  gym.make("Ant-v2")
     else:
       print("Environments wrong id===========================")
       exit(-1)

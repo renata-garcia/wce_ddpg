@@ -99,6 +99,9 @@ def run_multi_ddpg():
       memory.add(prev_obs, action, reward, observation)
       #print(observation)
 
+      weights_mounted = np.zeros((num_ensemble))
+      print(weights_mounted)
+
       if (not test):
         # Train
         if memory.size() > 1000:
@@ -132,7 +135,11 @@ def run_multi_ddpg():
                 else:
                   qsin_mounted = np.concatenate((qsin_mounted, q), axis=1)
                   td_mounted = np.concatenate((td_mounted, td_l), axis=1)
-              q_critic.train(td_mounted) #qsin_mounted, td_mounted) TODO refactore
+              w_train = q_critic.train(td_mounted) #qsin_mounted, td_mounted) TODO refactore
+              #weights_mounted = weights_mounted + w_train
+              print(w_train)
+              #print(weights_mounted)
+              #print("done!")
 
             ## END TRAIN ACTOR CRITIC
             else:
@@ -197,6 +204,10 @@ def create_env():
     env = be.Environments('Gym-Humanoid-v2')
     steps_p_ep = 1000
     print(name_print, "Gym-Humanoid-v2")
+  elif "_ant_" in file_yaml:
+    env = be.Environments('Gym-Ant-v2')
+    steps_p_ep = 1000
+    print(name_print, "Gym-Ant-v2")
   else:
     print(name_print, file_yaml)
     exit(-1)
@@ -209,8 +220,9 @@ def create_env():
 # The configuration must define an "environment" tag at the root that
 # specifies the environment to be used.
 
-file_yaml = "../cfg/agent_humanoid_2good_j0.yaml"
-typeCriticAgregattion = "Average"
+file_yaml = "../cfg/agent_cp_3good_j0.yaml"
+file_yaml = "../cfg/agent_ant_2good_j0.yaml"
+typeCriticAgregattion = "NOTAverage"
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 

@@ -1,4 +1,4 @@
 environment:
   type: environment/gym
-  id: HumanoidStandup-v2
+  id: Ant-v2
   render: 0
