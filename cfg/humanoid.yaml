@@ -1,0 +1,5 @@
+environment:
+  type: environment/gym
+  id: Humanoid-v2
+  render: 0
+

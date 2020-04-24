@@ -193,6 +193,10 @@ def create_env():
     env = be.Environments('Gym-CarRacing-v0')
     steps_p_ep = 1000
     print(name_print, "Gym-CarRacing-v0")
+  elif "_humanoid_" in file_yaml:
+    env = be.Environments('Gym-Humanoid-v2')
+    steps_p_ep = 1000
+    print(name_print, "Gym-Humanoid-v2")
   else:
     print(name_print, file_yaml)
     exit(-1)
@@ -205,7 +209,7 @@ def create_env():
 # The configuration must define an "environment" tag at the root that
 # specifies the environment to be used.
 
-file_yaml = "../cfg/agent_cr_2good_j0.yaml"
+file_yaml = "../cfg/agent_humanoid_2good_j0.yaml"
 typeCriticAgregattion = "Average"
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
