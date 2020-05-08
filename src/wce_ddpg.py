@@ -4,8 +4,11 @@
 # This example must be run from its own directory, with
 # grl installed to a path in LD_LIBRARY_PATH and grlpy installed
 # to a path in PYTHON_PATH.
+
 #FILE=wce_ddpg.py; rm $FILE; touch $FILE; chmod 755 $FILE; nano $FILE; ./wce_ddpg.py
+
 import os
+import sys
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 import yaml
@@ -64,16 +67,14 @@ def run_multi_ddpg():
       # print(ep)
     else:
       test = 0
-    #observation = env._env.reset(test)
+    #observation = env._env.reset(test) TODO refactore
     observation = env._env.reset()
     observation = env.get_obs_trig(observation)
-    #print(observation)
 
     # Loop over control steps within an episode
     noise = 0
     while True:
       # Choose action
-      # action = network.get_action([observation])[0]
       if enable_ensemble:
         if test:
           action = get_action_ensemble(session, ensemble, sin, q_critic.q_critic, [observation])[0]
@@ -83,7 +84,6 @@ def run_multi_ddpg():
         action = get_action_ddpg(session, network, sin, [observation])[0]
 
       if not test:
-        # action += np.random.normal(scale=[1])
         noise = 0.85 * noise + np.random.normal(scale=[1])
         action += noise
 
@@ -100,11 +100,14 @@ def run_multi_ddpg():
       #print(observation)
 
       weights_mounted = np.zeros((num_ensemble))
-      print(weights_mounted)
 
       if (not test):
         # Train
         if memory.size() > 1000:
+
+          # print("weights_mounted")
+          # print(weights_mounted)
+
           steps_in_replay = replay_steps // batch_size
           for kk in range(steps_in_replay):
             # Get minibatch from replay memory
@@ -136,8 +139,9 @@ def run_multi_ddpg():
                   qsin_mounted = np.concatenate((qsin_mounted, q), axis=1)
                   td_mounted = np.concatenate((td_mounted, td_l), axis=1)
               w_train = q_critic.train(td_mounted) #qsin_mounted, td_mounted) TODO refactore
+              # print("w_train")
+              # print(w_train)
               #weights_mounted = weights_mounted + w_train
-              print(w_train)
               #print(weights_mounted)
               #print("done!")
 
@@ -220,9 +224,10 @@ def create_env():
 # The configuration must define an "environment" tag at the root that
 # specifies the environment to be used.
 
-file_yaml = "../cfg/agent_cp_3good_j0.yaml"
-file_yaml = "../cfg/agent_ant_2good_j0.yaml"
-typeCriticAgregattion = "NOTAverage"
+print(sys.argv)
+file_yaml = sys.argv[1]
+print(file_yaml)
+typeCriticAgregattion = sys.argv[2] #TODO make it robust "Average"
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
@@ -265,6 +270,7 @@ cfg_agt = {}
 cfg_agt['replay_steps'] = cfg['experiment']['agent']['replay_steps']
 cfg_agt['batch_size'] = cfg['experiment']['agent']['batch_size']
 cfg_agt['steps'] = cfg['experiment']['steps']  #TODO normalize
+cfg_agt['run_offset'] = cfg['experiment']['run_offset']
 
 
 print("# Create Gym environment")
@@ -334,8 +340,10 @@ session.run(tf.global_variables_initializer())
 # Initialize replay memory
 memory = ReplayMemory.ReplayMemory()
 
-file_name = cfg['experiment']['output']
-file_output = open("../" + file_name + ".dat", "w")
+
+#ext =  cfg['experiment']['run_offset'] + #TODO
+file_name = cfg['experiment']['output'] + typeCriticAgregattion + "-" +  ".txt"
+file_output = open("../" + file_name, "w")
 file_output.close()
 #TODO verificar nome do dat pros scripts
 
@@ -344,20 +352,9 @@ episodes = int(cfg_agt['steps']/steps_p_ep)
 replay_steps = cfg_agt['replay_steps']
 batch_size = cfg_agt['batch_size']
 reward_scale = cfg_ens[0]['reward_scale']
-#ens_config = ens_cfg.EnsembleConfig(episodes, replay_steps, batch_size, reward_scale)
 
 seed(1234)
 
 # Run episodes
 
 run_multi_ddpg()
-#multiddpg = MultiDDPG.MultiDDPG()
-#multiddpg.run_multi_ddpg(ens_config)
-
-
-# log = "           %d            %d            %0.1f" % (ep, ep * 100, episode_reward)
-# file_output = open("../" + file_name + ".dat", "a")
-# file_output.write(log + "\n")
-# file_output.close()
-# print(log)
-
