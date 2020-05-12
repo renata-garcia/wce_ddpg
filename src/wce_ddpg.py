@@ -58,8 +58,16 @@ def get_action_rnd_policy(sess, network, sin, obs):
 
 def run_multi_ddpg():
   global ne, file_output
+  w_train = 0
+  weights_mounted = np.zeros((num_ensemble))
+  steps_acum = 0
+  steps_count = 0
   for ep in range(episodes):
+
+    steps_acum = steps_acum + steps_count
+    steps_count = 0
     episode_reward = 0
+
     if (ep % 10 == 0):
       test = 1
       policy_rnd = int(random() * num_ensemble)
@@ -74,6 +82,7 @@ def run_multi_ddpg():
     # Loop over control steps within an episode
     noise = 0
     while True:
+      steps_count = steps_count + 1
       # Choose action
       if enable_ensemble:
         if test:
@@ -98,8 +107,6 @@ def run_multi_ddpg():
       # Add to replay memory
       memory.add(prev_obs, action, reward, observation)
       #print(observation)
-
-      weights_mounted = np.zeros((num_ensemble))
 
       if (not test):
         # Train
@@ -139,11 +146,7 @@ def run_multi_ddpg():
                   qsin_mounted = np.concatenate((qsin_mounted, q), axis=1)
                   td_mounted = np.concatenate((td_mounted, td_l), axis=1)
               w_train = q_critic.train(td_mounted) #qsin_mounted, td_mounted) TODO refactore
-              # print("w_train")
-              # print(w_train)
-              #weights_mounted = weights_mounted + w_train
-              #print(weights_mounted)
-              #print("done!")
+              weights_mounted = weights_mounted + w_train
 
             ## END TRAIN ACTOR CRITIC
             else:
@@ -165,11 +168,21 @@ def run_multi_ddpg():
         break
     if test:
       if ep > 0:
-        log = "           %d            %d            %0.1f" % (ep, ep * 100, episode_reward)
+        # log = "           %d            %d            %0.1f" % (ep, steps_acum, episode_reward)
+
+        if (num_ensemble == 2):
+          log = "           %d            %d            %0.1f           %0.01f            %0.01f" % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1])
+        elif (num_ensemble == 3):
+          log = "           %d            %d            %0.1f           %0.01f            %0.01f" % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1], weights_mounted[2])
+
         file_output = open("../" + file_name + ".dat", "a")
         file_output.write(log + "\n")
         file_output.close()
+
         print(log)
+
+        weights_mounted = np.zeros((num_ensemble))
+
         #print(observation)
         # print("          ", ep, "          ", ep*100, "          ", "{:.1f}".format(episode_reward))
 
