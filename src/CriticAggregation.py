@@ -1,6 +1,7 @@
 import tensorflow as tf
 import keras
 import numpy as np
+import os
 
 #rm CriticAggregation.py; touch CriticAggregation.py; chmod 755 CriticAggregation.py; nano CriticAggregation.py
 
@@ -20,7 +21,7 @@ class WeightedByTDError(CriticAggregation):
         self.q_critic = 0
 
     def buildLayer(self):
-        print('WeightedByTDError_buildLayer')
+        print('CriticAggregation::WeightedByTDError_buildLayer')
         #q_critic_d = Dense(1, name='q_critic_d')(self._q_in)
         #self.weights_t = tf.get_default_graph().get_tensor_by_name(os.path.split(q_critic_d.name)[0] + '/kernel:0') + 0.001
 
@@ -35,12 +36,7 @@ class WeightedByTDError(CriticAggregation):
         self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(qs_loss, name='qs_update')
 
     def train(self, td):
-        run_qs_update, run_weights = self._session.run([self.qs_update, self.weights], {self._td: td}) #TODO colocar [1] no final para pegar segundo return
-        # print(run_qs_update)
-        # print("run_qs_update")
-        # print(run_weights)
-        # print('WeightedByTDError_buildLayer -- self.weights')
-        return run_weights
+        return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
 
 class WeightedByAverage(CriticAggregation):
 
@@ -49,10 +45,12 @@ class WeightedByAverage(CriticAggregation):
         self._session = sess
         self._q_in = qin
         self.q_critic = 0
+        self.num_ensemble_ = num_ensemble
 
     def buildLayer(self):
-        print('WeightedByAverage_buildLayer')
+        print('CriticAggregation::WeightedByAverage_buildLayer')
         self.q_critic = keras.layers.average(self._q_in)
 
     def train(self, td):
-        return self.q_critic
+        run_weights = [0.5 for ii in range(self.num_ensemble_)]
+        return run_weights

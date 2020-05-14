@@ -11,11 +11,13 @@ import os
 import sys
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
+import tensorflow as tf
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.2)
+
 import yaml
 import numpy as np
 import base.Environments as be
 import base.DDPGNetworkConfig as ddpg_cfg
-import tensorflow as tf
 from random import random
 from random import seed
 
@@ -173,7 +175,7 @@ def run_multi_ddpg():
         if (num_ensemble == 2):
           log = "           %d            %d            %0.1f           %0.01f            %0.01f" % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1])
         elif (num_ensemble == 3):
-          log = "           %d            %d            %0.1f           %0.01f            %0.01f" % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1], weights_mounted[2])
+          log = "           %d            %d            %0.1f           %0.01f            %0.01f            %0.01f" % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1], weights_mounted[2])
 
         file_output = open("../" + file_name, "a")
         file_output.write(log + "\n")
@@ -297,8 +299,7 @@ print("max_action: ", max_action)
 print("obs--------------------     ", env.get_obs())
 
 print("# Set up Tensorflow")
-# Set up Tensorflow
-session = tf.Session()
+session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 
 print("# Create networks")
 # Create networks
