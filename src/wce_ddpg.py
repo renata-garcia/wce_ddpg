@@ -176,6 +176,8 @@ def run_multi_ddpg():
           log = "           %d            %d            %0.1f           %0.01f            %0.01f" % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1])
         elif (num_ensemble == 3):
           log = "           %d            %d            %0.1f           %0.01f            %0.01f            %0.01f" % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1], weights_mounted[2])
+        elif (num_ensemble == 4):
+          log = "           %d            %d            %0.1f           %0.01f            %0.01f            %0.01f            %0.01f" % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1], weights_mounted[2], weights_mounted[3])
 
         file_output = open("../" + file_name, "a")
         file_output.write(log + "\n")
