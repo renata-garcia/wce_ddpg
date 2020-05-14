@@ -6,7 +6,7 @@ experiment:
   steps: 600000
   rate: 0
   test_interval: 10
-  output: agent_hc_tau_replay_ddpg_tensorflow_sincos2_2good_j0_none_none_1.0_data_center_a1.0_
+  output: agent_hc_2_1good_1bad_j0_
   save_every: never
   
   agent:
