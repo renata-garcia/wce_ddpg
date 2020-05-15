@@ -141,7 +141,7 @@ def run_multi_ddpg():
                 session.run(ensemble[ne][2])
 
                 # Calculate Q value of state
-                td_l = [target[ii] - q[ii] for ii in range(len(q))]
+                td_l = [abs(target[ii]) - abs(q[ii]) for ii in range(len(q))]
                 if len(td_mounted) == 0:
                   qsin_mounted = q
                   td_mounted = td_l
@@ -175,8 +175,8 @@ def run_multi_ddpg():
         # log = "           %d            %d            %0.1f" % (ep, steps_acum, episode_reward)
 
         q_mounted_abs = abs(q_mounted[0]) + abs(q_mounted[1])
-        q_mounted_0_rel = abs(q_mounted[0])/q_mounted_abs
-        q_mounted_1_rel = abs(q_mounted[1])/q_mounted_abs
+        q_mounted_0_rel = 1 - (q_mounted_abs - abs(q_mounted[0]))/q_mounted_abs
+        q_mounted_1_rel = 1 - (q_mounted_abs - abs(q_mounted[1]))/q_mounted_abs
 
         if (num_ensemble == 2):
           log = "           %d            %d            %0.1f" \
