@@ -62,6 +62,7 @@ def run_multi_ddpg():
   global ne, file_output
   w_train = 0
   weights_mounted = np.zeros((num_ensemble))
+  q_mounted = np.zeros((num_ensemble))
   steps_acum = 0
   steps_count = 0
   for ep in range(episodes):
@@ -149,6 +150,7 @@ def run_multi_ddpg():
                   td_mounted = np.concatenate((td_mounted, td_l), axis=1)
               w_train = q_critic.train(td_mounted) #qsin_mounted, td_mounted) TODO refactore
               weights_mounted = weights_mounted + w_train
+              q_mounted = q_mounted + sum(qsin_mounted)
 
             ## END TRAIN ACTOR CRITIC
             else:
@@ -172,12 +174,19 @@ def run_multi_ddpg():
       if ep > 0:
         # log = "           %d            %d            %0.1f" % (ep, steps_acum, episode_reward)
 
+        q_mounted_abs = abs(q_mounted[0]) + abs(q_mounted[1])
+        q_mounted_0_rel = abs(q_mounted[0])/q_mounted_abs
+        q_mounted_1_rel = abs(q_mounted[1])/q_mounted_abs
+
         if (num_ensemble == 2):
-          log = "           %d            %d            %0.1f           %0.01f            %0.01f" % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1])
+          log = "           %d            %d            %0.1f" \
+                "           %0.01f            %0.01f           %0.01f" \
+                "            %0.01f            %0.01f            %0.01f            %0.01f"\
+                % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1], q_mounted[0], q_mounted[1], q_mounted_abs, q_mounted_0_rel, q_mounted_1_rel)
         elif (num_ensemble == 3):
-          log = "           %d            %d            %0.1f           %0.01f            %0.01f            %0.01f" % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1], weights_mounted[2])
+          log = "           %d            %d            %0.1f           %0.01f            %0.01f            %0.01f           %0.01f            %0.01f            %0.01f" % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1], weights_mounted[2], q_mounted[0], q_mounted[1], q_mounted[2])
         elif (num_ensemble == 4):
-          log = "           %d            %d            %0.1f           %0.01f            %0.01f            %0.01f            %0.01f" % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1], weights_mounted[2], weights_mounted[3])
+          log = "           %d            %d            %0.1f           %0.01f            %0.01f            %0.01f            %0.01f           %0.01f            %0.01f            %0.01f            %0.01f" % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1], weights_mounted[2], weights_mounted[3], q_mounted[0], q_mounted[1], q_mounted[2], q_mounted[3])
 
         file_output = open("../" + file_name, "a")
         file_output.write(log + "\n")
@@ -186,6 +195,7 @@ def run_multi_ddpg():
         print(log)
 
         weights_mounted = np.zeros((num_ensemble))
+        q_mounted = np.zeros((num_ensemble))
 
         #print(observation)
         # print("          ", ep, "          ", ep*100, "          ", "{:.1f}".format(episode_reward))
