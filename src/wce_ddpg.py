@@ -176,7 +176,13 @@ def run_multi_ddpg():
               w_train = q_critic.train(td_mounted) #qsin_mounted, td_mounted) TODO refactore
               weights_mounted = weights_mounted + w_train
 
-              data_mounted = np.concatenate((np.concatenate((td_mounted, target_mounted), axis=1), qsin_mounted), axis=1)
+              weights_log = np.array([w_train])
+              reward_log = np.array([[reward, steps_count]])
+              for ne in range(batch_size-1):
+                weights_log = np.concatenate((weights_log, np.array([w_train])), axis=0)
+                reward_log = np.concatenate((reward_log,  np.array([[reward, steps_count]])), axis=0)
+
+              data_mounted = np.concatenate((np.concatenate((np.concatenate((np.concatenate((td_mounted, target_mounted), axis=1), qsin_mounted), axis=1), weights_log), axis=1), reward_log), axis=1)
               mat = np.matrix(data_mounted)
               df = pd.DataFrame(data=mat.astype(float))
               file_t = file_yaml+'_log.csv'
@@ -221,9 +227,9 @@ def run_multi_ddpg():
         for ine in range(num_ensemble):
           log = log + "           %0.01f" \
                 % (q_mounted[ine])
-        q_mounted_abs = 0
-        for ine in range(num_ensemble):
-          q_mounted_abs = abs(q_mounted[ine])
+        # q_mounted_abs = 0
+        # for ine in range(num_ensemble):
+        #   q_mounted_abs = abs(q_mounted[ine])
         # for ine in range(num_ensemble):
         #   log = log + "            %0.01f" \
         #         % (1 - (q_mounted_abs - abs(q_mounted[ine]))/q_mounted_abs)
