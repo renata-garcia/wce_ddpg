@@ -10,12 +10,14 @@
 import os
 import sys
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
+dbg_weightstderror = 0
 
 import tensorflow as tf
 gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.2)
 
 import yaml
 import numpy as np
+import pandas as pd
 import base.Environments as be
 import base.DDPGNetworkConfig as ddpg_cfg
 from random import random
@@ -26,12 +28,7 @@ from CriticAggregation import WeightedByTDError
 from CriticAggregation import WeightedByAverage
 
 def get_action_ddpg(sess, network, obs):
-  rnd_policy = random()
-  if (rnd_policy < 0.05):
-      return (2*rnd_policy - 1 ) * max_action
-  else:
-    return sess.run(network.a_out, {network.s_in: obs})
-
+  return sess.run(network.a_out, {network.s_in: obs})
 
 def get_action_ensemble(sess, ensemble, sin, q_res, obs):
   act_nodes = [e[0].a_out for e in ensemble]
@@ -63,6 +60,7 @@ def run_multi_ddpg():
   w_train = 0
   weights_mounted = np.zeros((num_ensemble))
   q_mounted = np.zeros((num_ensemble))
+  target_mounted = np.zeros((num_ensemble))
   steps_acum = 0
   steps_count = 0
   for ep in range(episodes):
@@ -71,15 +69,15 @@ def run_multi_ddpg():
     steps_count = 0
     episode_reward = 0
 
+    #TODO selecionar a politica alternadamente
+    policy_rnd = int(random() * num_ensemble)
+
     if (ep % 10 == 0):
       test = 1
-      policy_rnd = int(random() * num_ensemble)
-      # print(policy_rnd)
-      # print(ep)
     else:
       test = 0
-    #observation = env._env.reset(test) TODO refactore
-    observation = env._env.reset()
+
+    observation = env.set_reset(test)
     observation = env.get_obs_trig(observation)
 
     # Loop over control steps within an episode
@@ -115,9 +113,6 @@ def run_multi_ddpg():
         # Train
         if memory.size() > 1000:
 
-          # print("weights_mounted")
-          # print(weights_mounted)
-
           steps_in_replay = replay_steps // batch_size
           for kk in range(steps_in_replay):
             # Get minibatch from replay memory
@@ -126,10 +121,12 @@ def run_multi_ddpg():
               ## TRAIN ACTOR CRITIC
               td_mounted = []
               qsin_mounted = []
+              target_mounted = []
               for ne in range(num_ensemble):
                 # Calculate Q value of next state
                 q = ensemble[ne][0].get_value(nobs)
                 nextq = ensemble[ne][1].get_value(nobs)
+                nextqactual = ensemble[ne][0].get_value(nobs)
 
                 # Calculate target using SARSA
                 target = [rew[ii] + cfg_ens[ne]['gamma'] * nextq[ii] for ii in range(len(nextq))]
@@ -141,16 +138,58 @@ def run_multi_ddpg():
                 session.run(ensemble[ne][2])
 
                 # Calculate Q value of state
-                td_l = [abs(target[ii]) - abs(q[ii]) for ii in range(len(q))]
+                td_l = [ target[ii] - q[ii] for ii in range(len(q)) ]
+                if dbg_weightstderror:
+                  print("SINGLE")
+                  print(td_l)
+                  print(target)
+                  print(q)
+
+                  print("BEFORE")
+                  print(td_mounted)
+                  print(target_mounted)
+                  print(qsin_mounted)
+
+                # td_l = [(rew[ii] + cfg_ens[ne]['gamma'] * nextqactual[ii]) - q[ii] for ii in range(len(q))]
+                #TODO log td_l and target
                 if len(td_mounted) == 0:
                   qsin_mounted = q
                   td_mounted = td_l
+                  target_mounted = target
                 else:
                   qsin_mounted = np.concatenate((qsin_mounted, q), axis=1)
                   td_mounted = np.concatenate((td_mounted, td_l), axis=1)
+                  target_mounted = np.concatenate((target_mounted, target), axis=1)
+
+                if(dbg_weightstderror):
+                  print("AFTER")
+                  print(td_mounted)
+                  print(target_mounted)
+                  print(qsin_mounted)
+
+              if dbg_weightstderror:
+                print("FINISHED")
+                print(td_mounted)
+                print(target_mounted)
+                print(qsin_mounted)
+
               w_train = q_critic.train(td_mounted) #qsin_mounted, td_mounted) TODO refactore
               weights_mounted = weights_mounted + w_train
-              q_mounted = q_mounted + sum(qsin_mounted)
+
+              data_mounted = np.concatenate((np.concatenate((td_mounted, target_mounted), axis=1), qsin_mounted), axis=1)
+              mat = np.matrix(data_mounted)
+              df = pd.DataFrame(data=mat.astype(float))
+              file_t = file_yaml+'_log.csv'
+              df.to_csv(file_t, sep=' ', mode='a', header=False, float_format='%.4f', index=False)
+
+              if dbg_weightstderror:
+                print("axis=0")
+                print(np.concatenate((np.concatenate((td_mounted, target_mounted)), qsin_mounted)))
+                print("axis=1")
+                print(data_mounted)
+
+              q_mounted = q_mounted + sum(abs(td_mounted))
+              target_mounted = target_mounted + sum(abs(target[ii]))
 
             ## END TRAIN ACTOR CRITIC
             else:
@@ -174,19 +213,20 @@ def run_multi_ddpg():
       if ep > 0:
         # log = "           %d            %d            %0.1f" % (ep, steps_acum, episode_reward)
 
-        q_mounted_abs = abs(q_mounted[0]) + abs(q_mounted[1])
-        q_mounted_0_rel = 1 - (q_mounted_abs - abs(q_mounted[0]))/q_mounted_abs
-        q_mounted_1_rel = 1 - (q_mounted_abs - abs(q_mounted[1]))/q_mounted_abs
-
-        if (num_ensemble == 2):
-          log = "           %d            %d            %0.1f" \
-                "           %0.01f            %0.01f           %0.01f" \
-                "            %0.01f            %0.01f            %0.01f            %0.01f"\
-                % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1], q_mounted[0], q_mounted[1], q_mounted_abs, q_mounted_0_rel, q_mounted_1_rel)
-        elif (num_ensemble == 3):
-          log = "           %d            %d            %0.1f           %0.01f            %0.01f            %0.01f           %0.01f            %0.01f            %0.01f" % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1], weights_mounted[2], q_mounted[0], q_mounted[1], q_mounted[2])
-        elif (num_ensemble == 4):
-          log = "           %d            %d            %0.1f           %0.01f            %0.01f            %0.01f            %0.01f           %0.01f            %0.01f            %0.01f            %0.01f" % (ep, steps_acum, episode_reward, weights_mounted[0], weights_mounted[1], weights_mounted[2], weights_mounted[3], q_mounted[0], q_mounted[1], q_mounted[2], q_mounted[3])
+        log = "           %d            %d            %0.1f" \
+                % (ep, steps_acum, episode_reward)
+        for ine in range(num_ensemble):
+          log = log + "           %0.01f" \
+                % (weights_mounted[ine])
+        for ine in range(num_ensemble):
+          log = log + "           %0.01f" \
+                % (q_mounted[ine])
+        q_mounted_abs = 0
+        for ine in range(num_ensemble):
+          q_mounted_abs = abs(q_mounted[ine])
+        # for ine in range(num_ensemble):
+        #   log = log + "            %0.01f" \
+        #         % (1 - (q_mounted_abs - abs(q_mounted[ine]))/q_mounted_abs)
 
         file_output = open("../" + file_name, "a")
         file_output.write(log + "\n")
@@ -196,6 +236,7 @@ def run_multi_ddpg():
 
         weights_mounted = np.zeros((num_ensemble))
         q_mounted = np.zeros((num_ensemble))
+        target_mounted = np.zeros((num_ensemble))
 
         #print(observation)
         # print("          ", ep, "          ", ep*100, "          ", "{:.1f}".format(episode_reward))
@@ -309,6 +350,11 @@ max_action = env._env.action_space.high
 print("min_action: ", env._env.action_space.low)
 print("max_action: ", max_action)
 print("obs--------------------     ", env.get_obs())
+
+mat = np.matrix([])
+df = pd.DataFrame(data=mat.astype(float))
+file_t = file_yaml+'_log.csv'
+df.to_csv(file_t, sep=' ', mode='w', header=False, float_format='%.4f', index=False)
 
 print("# Set up Tensorflow")
 session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))

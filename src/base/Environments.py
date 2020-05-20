@@ -111,3 +111,8 @@ class Environments(): #TODO separe files and use design patterns
     else:
       return observation
 
+  def set_reset(self, test):
+    if (self._id == "GrlEnv-Pendulum-v0") or (self._id == "GrlEnv-CartPole-v0") or (self._id == "GrlEnv-CartDoublePole-v0"):
+      return self._env.reset(test)
+    else:
+      return self._env.reset()
