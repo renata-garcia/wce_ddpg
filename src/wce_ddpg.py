@@ -177,10 +177,10 @@ def run_multi_ddpg():
               weights_mounted = weights_mounted + w_train
 
               weights_log = np.array([w_train])
-              reward_log = np.array([[reward, steps_count]])
+              reward_log = np.array([[reward, steps_count, ep]])
               for ne in range(batch_size-1):
                 weights_log = np.concatenate((weights_log, np.array([w_train])), axis=0)
-                reward_log = np.concatenate((reward_log,  np.array([[reward, steps_count]])), axis=0)
+                reward_log = np.concatenate((reward_log,  np.array([[reward, steps_count, ep]])), axis=0)
 
               data_mounted = np.concatenate((np.concatenate((np.concatenate((np.concatenate((td_mounted, target_mounted), axis=1), qsin_mounted), axis=1), weights_log), axis=1), reward_log), axis=1)
               mat = np.matrix(data_mounted)
