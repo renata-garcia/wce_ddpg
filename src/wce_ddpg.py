@@ -120,7 +120,7 @@ def run_multi_ddpg():
             if enable_ensemble:
               ## TRAIN ACTOR CRITIC
               td_mounted = []
-              qsin_mounted = []
+              q_mounted = []
               target_mounted = []
               for ne in range(num_ensemble):
                 # Calculate Q value of next state
@@ -148,16 +148,16 @@ def run_multi_ddpg():
                   print("BEFORE")
                   print(td_mounted)
                   print(target_mounted)
-                  print(qsin_mounted)
+                  print(q_mounted)
 
                 # td_l = [(rew[ii] + cfg_ens[ne]['gamma'] * nextqactual[ii]) - q[ii] for ii in range(len(q))]
                 #TODO log td_l and target
                 if len(td_mounted) == 0:
-                  qsin_mounted = q
+                  q_mounted = q
                   td_mounted = td_l
                   target_mounted = target
                 else:
-                  qsin_mounted = np.concatenate((qsin_mounted, q), axis=1)
+                  q_mounted = np.concatenate((q_mounted, q), axis=1)
                   td_mounted = np.concatenate((td_mounted, td_l), axis=1)
                   target_mounted = np.concatenate((target_mounted, target), axis=1)
 
@@ -165,15 +165,15 @@ def run_multi_ddpg():
                   print("AFTER")
                   print(td_mounted)
                   print(target_mounted)
-                  print(qsin_mounted)
+                  print(q_mounted)
 
               if dbg_weightstderror:
                 print("FINISHED")
                 print(td_mounted)
                 print(target_mounted)
-                print(qsin_mounted)
+                print(q_mounted)
 
-              w_train = q_critic.train(td_mounted) #qsin_mounted, td_mounted) TODO refactore
+              w_train = q_critic.train(td_mounted)
               weights_mounted = weights_mounted + w_train
 
               weights_log = np.array([w_train])
@@ -182,7 +182,7 @@ def run_multi_ddpg():
                 weights_log = np.concatenate((weights_log, np.array([w_train])), axis=0)
                 reward_log = np.concatenate((reward_log,  np.array([[reward, steps_count, ep]])), axis=0)
 
-              data_mounted = np.concatenate((np.concatenate((np.concatenate((np.concatenate((td_mounted, target_mounted), axis=1), qsin_mounted), axis=1), weights_log), axis=1), reward_log), axis=1)
+              data_mounted = np.concatenate((np.concatenate((np.concatenate((np.concatenate((td_mounted, target_mounted), axis=1), q_mounted), axis=1), weights_log), axis=1), reward_log), axis=1)
               mat = np.matrix(data_mounted)
               df = pd.DataFrame(data=mat.astype(float))
               file_t = file_yaml+'_log.csv'
@@ -190,12 +190,30 @@ def run_multi_ddpg():
 
               if dbg_weightstderror:
                 print("axis=0")
-                print(np.concatenate((np.concatenate((td_mounted, target_mounted)), qsin_mounted)))
+                print(np.concatenate((np.concatenate((td_mounted, target_mounted)), q_mounted)))
                 print("axis=1")
                 print(data_mounted)
 
-              q_mounted = q_mounted + sum(abs(td_mounted))
-              target_mounted = target_mounted + sum(abs(target[ii]))
+              # print("target_mounted BEFORE")
+              # print(target_mounted)
+              # print("abs(target[ii])")
+              # print(abs(target[ii]))
+              # print("sum(target[ii])")
+              # print(sum(target[ii]))
+              # print("abs(sum(target[ii]))")
+              # print(abs(sum(target[ii])))
+              # print("q_mounted BEFORE")
+              # print(q_mounted)
+              # print("sum(abs(target[ii]))")
+              # print(sum(abs(target[ii])))
+              #
+              # q_mounted = q_mounted + sum(abs(q_mounted))
+              # target_mounted = target_mounted + sum(abs(target[ii]))
+              #
+              # print("target_mounted AFTER")
+              # print(target_mounted)
+              # print("sum(abs(target[ii]))")
+              # print(sum(abs(target[ii])))
 
             ## END TRAIN ACTOR CRITIC
             else:
@@ -217,29 +235,32 @@ def run_multi_ddpg():
         break
     if test:
       if ep > 0:
-        # log = "           %d            %d            %0.1f" % (ep, steps_acum, episode_reward)
-
         log = "           %d            %d            %0.1f" \
                 % (ep, steps_acum, episode_reward)
+
         for ine in range(num_ensemble):
           log = log + "           %0.01f" \
                 % (weights_mounted[ine])
+
+        td_mounted = abs(target_mounted)
+        td_mounted = [sum(x) for x in zip(*td_mounted)]
+
         for ine in range(num_ensemble):
           log = log + "           %0.01f" \
-                % (q_mounted[ine])
-        # q_mounted_abs = 0
-        # for ine in range(num_ensemble):
-        #   q_mounted_abs = abs(q_mounted[ine])
-        # for ine in range(num_ensemble):
-        #   log = log + "            %0.01f" \
-        #         % (1 - (q_mounted_abs - abs(q_mounted[ine]))/q_mounted_abs)
+                % (td_mounted[ine])
+
+        qq_mounted = abs(q_mounted)
+        qq_mounted = [sum(x) for x in zip(*qq_mounted)]
+
+        for ine in range(num_ensemble):
+          log = log + "           %0.01f" \
+                % (qq_mounted[ine])
 
         file_output = open("../" + file_name, "a")
         file_output.write(log + "\n")
         file_output.close()
 
         print(log)
-
         weights_mounted = np.zeros((num_ensemble))
         q_mounted = np.zeros((num_ensemble))
         target_mounted = np.zeros((num_ensemble))
