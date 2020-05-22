@@ -57,10 +57,13 @@ def get_action_rnd_policy(sess, network, sin, obs):
 
 def run_multi_ddpg():
   global ne, file_output
+
   w_train = 0
   weights_mounted = np.zeros((num_ensemble))
-  q_mounted = np.zeros((num_ensemble))
+  td_mounted = np.zeros((num_ensemble))
   target_mounted = np.zeros((num_ensemble))
+  q_mounted = np.zeros((num_ensemble))
+
   steps_acum = 0
   steps_count = 0
   for ep in range(episodes):
@@ -194,27 +197,6 @@ def run_multi_ddpg():
                 print("axis=1")
                 print(data_mounted)
 
-              # print("target_mounted BEFORE")
-              # print(target_mounted)
-              # print("abs(target[ii])")
-              # print(abs(target[ii]))
-              # print("sum(target[ii])")
-              # print(sum(target[ii]))
-              # print("abs(sum(target[ii]))")
-              # print(abs(sum(target[ii])))
-              # print("q_mounted BEFORE")
-              # print(q_mounted)
-              # print("sum(abs(target[ii]))")
-              # print(sum(abs(target[ii])))
-              #
-              # q_mounted = q_mounted + sum(abs(q_mounted))
-              # target_mounted = target_mounted + sum(abs(target[ii]))
-              #
-              # print("target_mounted AFTER")
-              # print(target_mounted)
-              # print("sum(abs(target[ii]))")
-              # print(sum(abs(target[ii])))
-
             ## END TRAIN ACTOR CRITIC
             else:
               ## TRAIN ACTOR CRITIC
@@ -234,7 +216,7 @@ def run_multi_ddpg():
       if done:
         break
     if test:
-      if ep > 0:
+      if ep > 1:
         log = "           %d            %d            %0.1f" \
                 % (ep, steps_acum, episode_reward)
 
@@ -242,19 +224,34 @@ def run_multi_ddpg():
           log = log + "           %0.01f" \
                 % (weights_mounted[ine])
 
-        td_mounted = abs(target_mounted)
-        td_mounted = [sum(x) for x in zip(*td_mounted)]
+        if len(td_mounted) > 2:
+          td_mounted = [sum(x) for x in zip(*td_mounted)]
+          for ine in range(num_ensemble):
+            log = log + "           %0.01f" \
+                  % (td_mounted[ine])
+        else:
+          for ine in range(num_ensemble):
+            log = log + "           0.0"
 
-        for ine in range(num_ensemble):
-          log = log + "           %0.01f" \
-                % (td_mounted[ine])
+        if len(target_mounted) > 2:
+          target_mounted_t = abs(target_mounted)
+          target_mounted_t = [sum(x) for x in zip(*target_mounted_t)]
+          for ine in range(num_ensemble):
+            log = log + "           %0.01f" \
+                  % (target_mounted_t[ine])
+        else:
+          for ine in range(num_ensemble):
+            log = log + "           0.0"
 
-        qq_mounted = abs(q_mounted)
-        qq_mounted = [sum(x) for x in zip(*qq_mounted)]
-
-        for ine in range(num_ensemble):
-          log = log + "           %0.01f" \
-                % (qq_mounted[ine])
+        if len(q_mounted) > 2:
+          q_mounted_t = abs(q_mounted)
+          q_mounted_t = [sum(x) for x in zip(*q_mounted_t)]
+          for ine in range(num_ensemble):
+            log = log + "           %0.01f" \
+                  % (q_mounted_t[ine])
+        else:
+          for ine in range(num_ensemble):
+            log = log + "           0.0"
 
         file_output = open("../" + file_name, "a")
         file_output.write(log + "\n")
@@ -262,8 +259,9 @@ def run_multi_ddpg():
 
         print(log)
         weights_mounted = np.zeros((num_ensemble))
-        q_mounted = np.zeros((num_ensemble))
+        td_mounted = np.zeros((num_ensemble))
         target_mounted = np.zeros((num_ensemble))
+        q_mounted = np.zeros((num_ensemble))
 
         #print(observation)
         # print("          ", ep, "          ", ep*100, "          ", "{:.1f}".format(episode_reward))
