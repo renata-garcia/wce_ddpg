@@ -401,6 +401,8 @@ if enable_ensemble:
   #q_critic = WeightCritic.WeightCritic(session, qin, td, num_ensemble)
   if typeCriticAgregattion == "Average":
     q_critic = WeightedByAverage(session, qs1, td, num_ensemble)
+  if typeCriticAgregattion == "TDErrorInvW":
+    q_critic = WeightedByTDErrorInvW(session, qin, td, num_ensemble)
   else:
     q_critic = WeightedByTDError(session, qin, td, num_ensemble)
   q_critic.buildLayer()
