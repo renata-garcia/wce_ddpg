@@ -41,7 +41,7 @@ class WeightedByTDError(CriticAggregation):
 class WeightedByTDErrorInvW(CriticAggregation):
 
     def __init__(self, sess, qin, td, num_ensemble):
-        super(WeightedByTDError, self).__init__()
+        super(WeightedByTDErrorInvW, self).__init__()
         self._session = sess
         self._q_in = qin
         self._td = td

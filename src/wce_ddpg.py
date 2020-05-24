@@ -26,6 +26,7 @@ from random import seed
 import DDPGNetwork, DDPGNetworkNode, ReplayMemory
 from CriticAggregation import WeightedByTDError
 from CriticAggregation import WeightedByAverage
+from CriticAggregation import WeightedByTDErrorInvW
 
 def get_action_ddpg(sess, network, obs):
   return sess.run(network.a_out, {network.s_in: obs})
@@ -312,7 +313,8 @@ def create_env():
 print(sys.argv)
 file_yaml = sys.argv[1]
 print(file_yaml)
-typeCriticAgregattion = sys.argv[2] #TODO make it robust "Average"
+typeCriticAggregation = sys.argv[2]
+run_offset = sys.argv[3]
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
@@ -398,13 +400,17 @@ if enable_ensemble:
   qs = tf.reshape(qs1, [1,num_ensemble])
 
   qin = tf.placeholder_with_default(tf.stop_gradient(qs), shape=(None, num_ensemble), name='qin')
-  #q_critic = WeightCritic.WeightCritic(session, qin, td, num_ensemble)
-  if typeCriticAgregattion == "Average":
+  if typeCriticAggregation == "Average":
     q_critic = WeightedByAverage(session, qs1, td, num_ensemble)
-  if typeCriticAgregattion == "TDErrorInvW":
+  elif typeCriticAggregation == "TDErrorInvW":
     q_critic = WeightedByTDErrorInvW(session, qin, td, num_ensemble)
-  else:
+  elif typeCriticAggregation == "TDError":
     q_critic = WeightedByTDError(session, qin, td, num_ensemble)
+  else:
+    print("typeCriticAggregation")
+    print(typeCriticAggregation)
+    exit(-1)
+
   q_critic.buildLayer()
 
 else:
@@ -428,7 +434,7 @@ memory = ReplayMemory.ReplayMemory()
 
 
 #ext =  cfg['experiment']['run_offset'] + #TODO
-file_name = cfg['experiment']['output'] + typeCriticAgregattion + ".txt"
+file_name = cfg['experiment']['output'] + typeCriticAggregation + "-" + run_offset + ".txt"
 file_output = open("../" + file_name, "w")
 file_output.close()
 
