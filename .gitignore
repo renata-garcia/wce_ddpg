@@ -6,6 +6,7 @@ __pycache__/
 # GRL files
 *.dat
 *.txt
+*.csv
 
 # C extensions
 *.so

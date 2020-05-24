@@ -56,7 +56,7 @@ def get_action_rnd_policy(sess, network, sin, obs):
 
 
 def run_multi_ddpg():
-  global ne, file_output
+  global ne, file_output, file_name
 
   w_train = 0
   weights_mounted = np.zeros((num_ensemble))
@@ -188,7 +188,7 @@ def run_multi_ddpg():
               data_mounted = np.concatenate((np.concatenate((np.concatenate((np.concatenate((td_mounted, target_mounted), axis=1), q_mounted), axis=1), weights_log), axis=1), reward_log), axis=1)
               mat = np.matrix(data_mounted)
               df = pd.DataFrame(data=mat.astype(float))
-              file_t = file_yaml+'_log.csv'
+              file_t = "../" + file_name + '_log.csv'
               df.to_csv(file_t, sep=' ', mode='a', header=False, float_format='%.4f', index=False)
 
               if dbg_weightstderror:
@@ -376,11 +376,6 @@ print("min_action: ", env._env.action_space.low)
 print("max_action: ", max_action)
 print("obs--------------------     ", env.get_obs())
 
-mat = np.matrix([])
-df = pd.DataFrame(data=mat.astype(float))
-file_t = file_yaml+'_log.csv'
-df.to_csv(file_t, sep=' ', mode='w', header=False, float_format='%.4f', index=False)
-
 print("# Set up Tensorflow")
 session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 
@@ -439,10 +434,14 @@ memory = ReplayMemory.ReplayMemory()
 
 
 #ext =  cfg['experiment']['run_offset'] + #TODO
-file_name = cfg['experiment']['output'] + typeCriticAgregattion + "-" +  ".txt"
+file_name = cfg['experiment']['output'] + typeCriticAgregattion + ".txt"
 file_output = open("../" + file_name, "w")
 file_output.close()
-#TODO verificar nome do dat pros scripts
+
+mat = np.matrix([])
+df = pd.DataFrame(data=mat.astype(float))
+file_t = "../" + file_name +'_log.csv'
+df.to_csv(file_t, sep=' ', mode='w', header=False, float_format='%.4f', index=False)
 
 print("# Run episodes")
 episodes = int(cfg_agt['steps']/steps_p_ep)
