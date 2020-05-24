@@ -127,9 +127,9 @@ def run_multi_ddpg():
               target_mounted = []
               for ne in range(num_ensemble):
                 # Calculate Q value of next state
-                q = ensemble[ne][0].get_value(nobs)
+                q = ensemble[ne][0].get_value(obs)
+                qtarget = ensemble[ne][1].get_value(obs) #TODO TD = TARGET - Q_TARGET
                 nextq = ensemble[ne][1].get_value(nobs)
-                nextqactual = ensemble[ne][0].get_value(nobs)
 
                 # Calculate target using SARSA
                 target = [rew[ii] + cfg_ens[ne]['gamma'] * nextq[ii] for ii in range(len(nextq))]
