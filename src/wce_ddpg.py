@@ -224,33 +224,25 @@ def run_multi_ddpg():
           log = log + "           %0.01f" \
                 % (weights_mounted[ine])
 
-        if len(td_mounted) > 2:
+        if weights_mounted[0] > 0:
           td_mounted = [sum(x) for x in zip(*td_mounted)]
           for ine in range(num_ensemble):
             log = log + "           %0.01f" \
                   % (td_mounted[ine])
-        else:
-          for ine in range(num_ensemble):
-            log = log + "           0.0"
 
-        if len(target_mounted) > 2:
           target_mounted_t = abs(target_mounted)
           target_mounted_t = [sum(x) for x in zip(*target_mounted_t)]
           for ine in range(num_ensemble):
             log = log + "           %0.01f" \
                   % (target_mounted_t[ine])
-        else:
-          for ine in range(num_ensemble):
-            log = log + "           0.0"
 
-        if len(q_mounted) > 2:
           q_mounted_t = abs(q_mounted)
           q_mounted_t = [sum(x) for x in zip(*q_mounted_t)]
           for ine in range(num_ensemble):
             log = log + "           %0.01f" \
                   % (q_mounted_t[ine])
-        else:
-          for ine in range(num_ensemble):
+        elif ep > 1:
+          for ine in range(3*num_ensemble): #3 = td, target, q
             log = log + "           0.0"
 
         file_output = open("../" + file_name, "a")
