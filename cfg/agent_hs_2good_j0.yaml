@@ -6,7 +6,7 @@ experiment:
   steps: 600000
   rate: 0
   test_interval: 10
-  output: humanoid_standup_ddpg_j0_
+  output: agent_hs_2good_j0_
   save_every: never
 
   agent:

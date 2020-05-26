@@ -6,7 +6,7 @@ experiment:
   steps: 600000
   rate: 0
   test_interval: 10
-  output: ant_ddpg_j0_
+  output: agent_ant_2good_j0_
   save_every: never
 
   agent:
