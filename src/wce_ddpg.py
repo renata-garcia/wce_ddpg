@@ -9,7 +9,7 @@
 
 import os
 import sys
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 dbg_weightstderror = 0
 
 import tensorflow as tf
@@ -27,6 +27,7 @@ import DDPGNetwork, DDPGNetworkNode, ReplayMemory
 from CriticAggregation import WeightedByTDError
 from CriticAggregation import WeightedByAverage
 from CriticAggregation import WeightedByTDErrorInvW
+from CriticAggregation import WeightedByTDErrorAddingReward
 
 def get_action_ddpg(sess, network, obs):
   return sess.run(network.a_out, {network.s_in: obs})
@@ -259,6 +260,7 @@ def run_multi_ddpg():
         #print(observation)
         # print("          ", ep, "          ", ep*100, "          ", "{:.1f}".format(episode_reward))
 
+
 def create_env():
   steps_p_ep = 0
   name_print = "wce_ddpg.py::create_env()::"
@@ -400,10 +402,13 @@ if enable_ensemble:
   qs = tf.reshape(qs1, [1,num_ensemble])
 
   qin = tf.placeholder_with_default(tf.stop_gradient(qs), shape=(None, num_ensemble), name='qin')
+  addingreward = tf.placeholder_with_default(tf.stop_gradient(qs), shape=(None, num_ensemble), name='addingreward')
   if typeCriticAggregation == "Average":
     q_critic = WeightedByAverage(session, qs1, td, num_ensemble)
   elif typeCriticAggregation == "TDErrorInvW":
     q_critic = WeightedByTDErrorInvW(session, qin, td, num_ensemble)
+  elif typeCriticAggregation == "TDErrorAddRw":
+    q_critic = WeightedByTDErrorAddingReward(session, qin, td, num_ensemble)
   elif typeCriticAggregation == "TDError":
     q_critic = WeightedByTDError(session, qin, td, num_ensemble)
   else:
@@ -454,3 +459,4 @@ seed(1234)
 # Run episodes
 
 run_multi_ddpg()
+
