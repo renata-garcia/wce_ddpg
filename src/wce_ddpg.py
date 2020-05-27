@@ -27,7 +27,7 @@ import DDPGNetwork, DDPGNetworkNode, ReplayMemory
 from CriticAggregation import WeightedByTDError
 from CriticAggregation import WeightedByAverage
 from CriticAggregation import WeightedByTDErrorInvW
-from CriticAggregation import WeightedByTDErrorAddingReward
+from WeightedByTDErrorAddingReward import WeightedByTDErrorAddingReward
 
 def get_action_ddpg(sess, network, obs):
   return sess.run(network.a_out, {network.s_in: obs})
@@ -214,6 +214,8 @@ def run_multi_ddpg():
 
             # Slowly update target network
             session.run(update_ops)
+
+            # print(q_critic._q_in)
 
       if done:
         break
