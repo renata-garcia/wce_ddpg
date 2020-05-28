@@ -27,7 +27,8 @@ import DDPGNetwork, DDPGNetworkNode, ReplayMemory
 from CriticAggregation import WeightedByTDError
 from CriticAggregation import WeightedByAverage
 from CriticAggregation import WeightedByTDErrorInvW
-from WeightedByTDErrorAddingReward import WeightedByTDErrorAddingReward
+from CriticAggregation import WeightedByTDErrorAddingReward
+# from WeightedByTDErrorAddingReward import WeightedByTDErrorAddingReward
 
 def get_action_ddpg(sess, network, obs):
   return sess.run(network.a_out, {network.s_in: obs})
@@ -179,6 +180,7 @@ def run_multi_ddpg():
                 print(q_mounted)
 
               w_train = q_critic.train(td_mounted)
+
               weights_mounted = weights_mounted + w_train
 
               weights_log = np.array([w_train])
@@ -214,8 +216,10 @@ def run_multi_ddpg():
 
             # Slowly update target network
             session.run(update_ops)
-
-            # print(q_critic._q_in)
+            # act = session.run(ensemble[0][0].a_out, {sin: [observation]})
+            # session.run(q_critic.q_critic, {ensemble[0][0].a_in: act})
+            # print("q_critic.q_critic")
+            # print(q_critic.q_critic)
 
       if done:
         break
@@ -404,13 +408,18 @@ if enable_ensemble:
   qs = tf.reshape(qs1, [1,num_ensemble])
 
   qin = tf.placeholder_with_default(tf.stop_gradient(qs), shape=(None, num_ensemble), name='qin')
-  addingreward = tf.placeholder_with_default(tf.stop_gradient(qs), shape=(None, num_ensemble), name='addingreward')
+  addingreward = tf.placeholder_with_default(tf.stop_gradient(qs), shape=(num_ensemble, 1), name='addingreward')
+  print("qin")
+  print(qin)
+  print("addingreward")
+  print(addingreward)
+
   if typeCriticAggregation == "Average":
     q_critic = WeightedByAverage(session, qs1, td, num_ensemble)
   elif typeCriticAggregation == "TDErrorInvW":
     q_critic = WeightedByTDErrorInvW(session, qin, td, num_ensemble)
   elif typeCriticAggregation == "TDErrorAddRw":
-    q_critic = WeightedByTDErrorAddingReward(session, qin, td, num_ensemble)
+    q_critic = WeightedByTDErrorAddingReward(session, qin, td, num_ensemble, addingreward)
   elif typeCriticAggregation == "TDError":
     q_critic = WeightedByTDError(session, qin, td, num_ensemble)
   else:
