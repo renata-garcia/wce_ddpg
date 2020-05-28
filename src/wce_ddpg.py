@@ -28,7 +28,6 @@ from CriticAggregation import WeightedByTDError
 from CriticAggregation import WeightedByAverage
 from CriticAggregation import WeightedByTDErrorInvW
 from CriticAggregation import WeightedByTDErrorAddingReward
-# from WeightedByTDErrorAddingReward import WeightedByTDErrorAddingReward
 
 def get_action_ddpg(sess, network, obs):
   return sess.run(network.a_out, {network.s_in: obs})
@@ -68,15 +67,25 @@ def run_multi_ddpg():
   q_mounted = np.zeros((num_ensemble))
 
   steps_acum = 0
-  steps_count = 0
+  steps_count = 1 #first init unit, reseted before use
+  episode_reward = 1 #first init unit, reseted before use
+  addrw_acum = np.zeros(num_ensemble, np.float32)
   for ep in range(episodes):
+
+    #TODO selecionar a politica alternadamente
+    #policy_rnd = int(random() * num_ensemble)
+    policy_rnd = (ep%num_ensemble)
+    # print("ep %d, policy_rnd %d, num_ensemble %d" % (ep, policy_rnd, num_ensemble))
+
+    addrw_mounted = np.zeros(num_ensemble, np.float32)
+    addrw_acum[policy_rnd] = episode_reward/steps_count
+    addrw_sum = np.sum(addrw_acum)
+    for ii in range(num_ensemble):
+      addrw_mounted[ii] = addrw_acum[ii]/addrw_sum
 
     steps_acum = steps_acum + steps_count
     steps_count = 0
     episode_reward = 0
-
-    #TODO selecionar a politica alternadamente
-    policy_rnd = int(random() * num_ensemble)
 
     if (ep % 10 == 0):
       test = 1
@@ -179,7 +188,7 @@ def run_multi_ddpg():
                 print(target_mounted)
                 print(q_mounted)
 
-              w_train = q_critic.train(td_mounted)
+              w_train = q_critic.train(td_mounted, addrw_mounted)
 
               weights_mounted = weights_mounted + w_train
 
@@ -406,11 +415,11 @@ if enable_ensemble:
   for i in range(num_ensemble):
     qs1.append(ensemble[i][0].q)
   qs = tf.reshape(qs1, [1,num_ensemble])
-
   qin = tf.placeholder_with_default(tf.stop_gradient(qs), shape=(None, num_ensemble), name='qin')
-  addingreward = tf.placeholder_with_default(tf.stop_gradient(qs), shape=(num_ensemble, 1), name='addingreward')
-  print("qin")
-  print(qin)
+
+  addrw = np.zeros(num_ensemble, dtype=np.float32)
+  # addingreward = tf.placeholder_with_default(tf.stop_gradient(addrw), shape=(num_ensemble), name='addingreward')
+  addingreward = tf.placeholder(tf.float32, shape=(None, num_ensemble), name='addingreward')
   print("addingreward")
   print(addingreward)
 

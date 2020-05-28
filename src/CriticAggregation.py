@@ -35,7 +35,7 @@ class WeightedByTDError(CriticAggregation):
         qs_loss = tf.reduce_sum(((self._td ** 2) * self.weights))
         self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(qs_loss, name='qs_update')
 
-    def train(self, td):
+    def train(self, td, addrw):
         return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
 
 class WeightedByTDErrorInvW(CriticAggregation):
@@ -64,7 +64,7 @@ class WeightedByTDErrorInvW(CriticAggregation):
         qs_loss = tf.reduce_sum(((self._td ** 2) * self.weights))
         self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(qs_loss, name='qs_update')
 
-    def train(self, td):
+    def train(self, td, addrw):
         return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
 
 class WeightedByTDErrorAddingReward(CriticAggregation):
@@ -73,7 +73,7 @@ class WeightedByTDErrorAddingReward(CriticAggregation):
         super().__init__()
         self._session = sess
         self._q_in = qin
-        self._adding_reward_t = adding_reward
+        self._adding_reward_in = adding_reward
         self._td = td
         self._lr_critic = 0.0001
         self._num_ensemble = num_ensemble
@@ -84,7 +84,7 @@ class WeightedByTDErrorAddingReward(CriticAggregation):
         #q_critic_d = Dense(1, name='q_critic_d')(self._q_in)
         #self.weights_t = tf.get_default_graph().get_tensor_by_name(os.path.split(q_critic_d.name)[0] + '/kernel:0') + 0.001
 
-        self._adding_reward = tf.get_variable(name='adding_reward', dtype=tf.float32,
+        self._adding_reward = tf.get_variable(name='adding_reward_var', dtype=tf.float32,
                                            initializer=np.zeros(self._num_ensemble, np.float32))
         print("**************")
         print(self._adding_reward)
@@ -99,11 +99,12 @@ class WeightedByTDErrorAddingReward(CriticAggregation):
         qs_loss = tf.reduce_sum(((self._td ** 2) * self.weights))
         self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(qs_loss, name='qs_update')
 
-    def train(self, td):
+    def train(self, td, addrw):
         # return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
-        qs_update_t, weights_t = self._session.run([self.qs_update, self.weights], {self._td: td})
+        qs_update_t, weights_t,  adding_reward_t = self._session.run([self.qs_update, self.weights,  self._adding_reward], {self._td: td, self._adding_reward_in: addrw})
         # print("weights_t")
-        # print(weights_t)
+        print(weights_t)
+        print(adding_reward_t)
         return weights_t
 
 class WeightedByAverage(CriticAggregation):
@@ -119,6 +120,6 @@ class WeightedByAverage(CriticAggregation):
         print('CriticAggregation::WeightedByAverage_buildLayer')
         self.q_critic = keras.layers.average(self._q_in)
 
-    def train(self, td):
+    def train(self, td, addrw):
         run_weights = [0.5 for ii in range(self.num_ensemble_)]
         return run_weights
