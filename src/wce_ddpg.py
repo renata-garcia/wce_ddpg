@@ -33,7 +33,7 @@ from CriticAggregation import WeightedByAddingReward
 def get_action_ddpg(sess, network, obs):
   return sess.run(network.a_out, {network.s_in: obs})
 
-def get_action_ensemble(sess, ensemble, sin, q_res, obs):
+def get_action_ensemble(sess, ensemble, sin, q_res, obs, act_acum):
   act_nodes = [e[0].a_out for e in ensemble]
   acts = sess.run(act_nodes, {sin: obs})
 
@@ -51,6 +51,7 @@ def get_action_ensemble(sess, ensemble, sin, q_res, obs):
     if qs[i+1] > biggest_v:
       biggest_v = qs[i+1]
       biggest_i = i+1
+  act_acum[biggest_i] = act_acum[biggest_i] + 1
   return acts[biggest_i]
 
 
@@ -72,6 +73,8 @@ def run_multi_ddpg():
   episode_reward = 1 #first init unit, reseted before use
   addrw_acum = np.zeros(num_ensemble, np.float32)
   for ep in range(episodes):
+
+    act_acum = np.zeros(num_ensemble)
 
     #TODO selecionar a politica alternadamente
     #policy_rnd = int(random() * num_ensemble)
@@ -105,7 +108,7 @@ def run_multi_ddpg():
       # Choose action
       if enable_ensemble:
         if test:
-          action = get_action_ensemble(session, ensemble, sin, q_critic.q_critic, [observation])[0]
+          action = get_action_ensemble(session, ensemble, sin, q_critic.q_critic, [observation], act_acum)[0]
         else:
           action = get_action_rnd_policy(session, ensemble[policy_rnd], sin, [observation])[0]
       else:
@@ -265,6 +268,10 @@ def run_multi_ddpg():
         elif ep > 1:
           for ine in range(3*num_ensemble): #3 = td, target, q
             log = log + "           0.0"
+
+        for iaa in range(num_ensemble):
+            log = log + "           %0.01f" \
+                  % (act_acum[iaa])
 
         file_output = open("../" + file_name, "a")
         file_output.write(log + "\n")

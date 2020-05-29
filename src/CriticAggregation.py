@@ -22,8 +22,6 @@ class WeightedByTDError(CriticAggregation):
 
     def buildLayer(self):
         print('CriticAggregation::WeightedByTDError_buildLayer')
-        #q_critic_d = Dense(1, name='q_critic_d')(self._q_in)
-        #self.weights_t = tf.get_default_graph().get_tensor_by_name(os.path.split(q_critic_d.name)[0] + '/kernel:0') + 0.001
 
         weights_raw = tf.get_variable(name='weights_raw', dtype=tf.float32,
                                            initializer=np.zeros(self._num_ensemble, np.float32))
@@ -50,9 +48,7 @@ class WeightedByTDErrorInvW(CriticAggregation):
         self.q_critic = 0
 
     def buildLayer(self):
-        print('CriticAggregation::WeightedByTDError_buildLayer')
-        #q_critic_d = Dense(1, name='q_critic_d')(self._q_in)
-        #self.weights_t = tf.get_default_graph().get_tensor_by_name(os.path.split(q_critic_d.name)[0] + '/kernel:0') + 0.001
+        print('CriticAggregation::WeightedByTDErrorInvW_buildLayer')
 
         weights_raw = tf.get_variable(name='weights_raw', dtype=tf.float32,
                                            initializer=np.zeros(self._num_ensemble, np.float32))
@@ -80,9 +76,7 @@ class WeightedByTDErrorAddingReward(CriticAggregation):
         self.q_critic = 0
 
     def buildLayer(self):
-        print('CriticAggregation::WeightedByTDError_buildLayer')
-        #q_critic_d = Dense(1, name='q_critic_d')(self._q_in)
-        #self.weights_t = tf.get_default_graph().get_tensor_by_name(os.path.split(q_critic_d.name)[0] + '/kernel:0') + 0.001
+        print('CriticAggregation::WeightedByTDErrorAddingReward_buildLayer')
 
         self._adding_reward = tf.get_variable(name='adding_reward_var', dtype=tf.float32,
                                            initializer=np.zeros(self._num_ensemble, np.float32))
@@ -121,7 +115,7 @@ class WeightedByAddingReward(CriticAggregation):
         self.q_critic = 0
 
     def buildLayer(self):
-        print('CriticAggregation::WeightedByTDError_buildLayer')
+        print('CriticAggregation::WeightedByAddingReward_buildLayer')
 
         self._adding_reward = tf.get_variable(name='adding_reward_var', dtype=tf.float32,
                                            initializer=np.zeros(self._num_ensemble, np.float32))
