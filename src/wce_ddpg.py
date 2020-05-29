@@ -201,11 +201,12 @@ def run_multi_ddpg():
                 weights_log = np.concatenate((weights_log, np.array([w_train])), axis=0)
                 reward_log = np.concatenate((reward_log,  np.array([[reward, steps_count, ep]])), axis=0)
 
-              data_mounted = np.concatenate((np.concatenate((np.concatenate((np.concatenate((td_mounted, target_mounted), axis=1), q_mounted), axis=1), weights_log), axis=1), reward_log), axis=1)
-              mat = np.matrix(data_mounted)
-              df = pd.DataFrame(data=mat.astype(float))
-              file_t = "../" + file_name + '_log.csv'
-              df.to_csv(file_t, sep=' ', mode='a', header=False, float_format='%.4f', index=False)
+              if print_cvs:
+                data_mounted = np.concatenate((np.concatenate((np.concatenate((np.concatenate((td_mounted, target_mounted), axis=1), q_mounted), axis=1), weights_log), axis=1), reward_log), axis=1)
+                mat = np.matrix(data_mounted)
+                df = pd.DataFrame(data=mat.astype(float))
+                file_t = "../" + file_name + '_log.csv'
+                df.to_csv(file_t, sep=' ', mode='a', header=False, float_format='%.4f', index=False)
 
               if dbg_weightstderror:
                 print("axis=0")
@@ -335,6 +336,7 @@ file_yaml = sys.argv[1]
 print(file_yaml)
 typeCriticAggregation = sys.argv[2]
 run_offset = sys.argv[3]
+print_cvs = sys.argv[4]
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
@@ -468,10 +470,11 @@ file_name = cfg['experiment']['output'] + typeCriticAggregation + "-" + run_offs
 file_output = open("../" + file_name, "w")
 file_output.close()
 
-mat = np.matrix([])
-df = pd.DataFrame(data=mat.astype(float))
-file_t = "../" + file_name +'_log.csv'
-df.to_csv(file_t, sep=' ', mode='w', header=False, float_format='%.4f', index=False)
+if print_cvs:
+  mat = np.matrix([])
+  df = pd.DataFrame(data=mat.astype(float))
+  file_t = "../" + file_name +'_log.csv'
+  df.to_csv(file_t, sep=' ', mode='w', header=False, float_format='%.4f', index=False)
 
 print("# Run episodes")
 episodes = int(cfg_agt['steps']/steps_p_ep)
