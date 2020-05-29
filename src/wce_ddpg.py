@@ -336,7 +336,7 @@ file_yaml = sys.argv[1]
 print(file_yaml)
 typeCriticAggregation = sys.argv[2]
 run_offset = sys.argv[3]
-print_cvs = sys.argv[4]
+print_cvs = int(sys.argv[4])
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
