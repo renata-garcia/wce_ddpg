@@ -78,10 +78,12 @@ def run_multi_ddpg():
     # print("ep %d, policy_rnd %d, num_ensemble %d" % (ep, policy_rnd, num_ensemble))
 
     addrw_mounted = np.zeros(num_ensemble, np.float32)
-    addrw_acum[policy_rnd] = episode_reward/steps_count
+    addrw_acum[policy_rnd] += episode_reward/steps_count
     addrw_sum = np.sum(addrw_acum)
     for ii in range(num_ensemble):
       addrw_mounted[ii] = addrw_acum[ii]/addrw_sum
+    # print("addrw_mounted")
+    # print(addrw_mounted)
 
     steps_acum = steps_acum + steps_count
     steps_count = 0
@@ -418,8 +420,8 @@ if enable_ensemble:
   qin = tf.placeholder_with_default(tf.stop_gradient(qs), shape=(None, num_ensemble), name='qin')
 
   addrw = np.zeros(num_ensemble, dtype=np.float32)
-  # addingreward = tf.placeholder_with_default(tf.stop_gradient(addrw), shape=(num_ensemble), name='addingreward')
-  addingreward = tf.placeholder(tf.float32, shape=(None, num_ensemble), name='addingreward')
+  addingreward = tf.placeholder_with_default(tf.stop_gradient(addrw), shape=(num_ensemble), name='addingreward')
+  # addingreward = tf.placeholder(tf.float32, shape=(num_ensemble), name='addingreward')
   print("addingreward")
   print(addingreward)
 

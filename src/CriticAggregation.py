@@ -89,9 +89,10 @@ class WeightedByTDErrorAddingReward(CriticAggregation):
         print("**************")
         print(self._adding_reward)
         print("**************")
+        self._adding_reward = tf.reduce_sum([self._adding_reward, self._adding_reward_in], 0)
+
         weights_raw = tf.get_variable(name='weights_raw', dtype=tf.float32,
                                            initializer=np.zeros(self._num_ensemble, np.float32))
-        self._adding_reward = tf.reduce_sum([self._adding_reward, self._adding_reward_t], 0)
         self.weights = tf.nn.softmax(weights_raw) + self._adding_reward
         self.q_critic = tf.reduce_sum((self._q_in * self.weights))
 
@@ -103,8 +104,8 @@ class WeightedByTDErrorAddingReward(CriticAggregation):
         # return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
         qs_update_t, weights_t,  adding_reward_t = self._session.run([self.qs_update, self.weights,  self._adding_reward], {self._td: td, self._adding_reward_in: addrw})
         # print("weights_t")
-        print(weights_t)
-        print(adding_reward_t)
+        # print(weights_t)
+        # print(adding_reward_t)
         return weights_t
 
 class WeightedByAverage(CriticAggregation):
