@@ -1,5 +1,6 @@
 
 # SRC CONFIGURED COPYING FILE FROM ~/PROJECTS/GRL
+src/script.sh
 src/grlenv/
 src/libyaml-cpp.so.0.5
 
