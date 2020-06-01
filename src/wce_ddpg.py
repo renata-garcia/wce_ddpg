@@ -33,18 +33,28 @@ from CriticAggregation import WeightedByAddingReward
 def get_action_ddpg(sess, network, obs):
   return sess.run(network.a_out, {network.s_in: obs})
 
-def get_action_ensemble(sess, ensemble, sin, q_res, obs, act_acum):
+def get_action_ensemble(sess, ensemble, sin, q_res, obs, act_acum, addrw):
   act_nodes = [e[0].a_out for e in ensemble]
   acts = sess.run(act_nodes, {sin: obs})
+
+  print("addrw")
+  print(addrw)
 
   # print(feed_dict)
   qs = []
   for i in range(num_ensemble):
-    feed_dict = {sin: obs}
+    feed_dict = {sin: obs, addingreward: addrw}
     v_qin = []
     for j in range(num_ensemble):
       feed_dict[ensemble[j][0].a_in] = acts[i]
     qs.append(sess.run(q_res, feed_dict))
+    print("q")
+    print(sess.run(ensemble[j][0].q, feed_dict))
+  print("add_rw_in,add_rw, weights, qs")
+  print(sess.run(q_critic._adding_reward_in, feed_dict))
+  print(sess.run(q_critic._adding_reward, feed_dict))
+  print(sess.run(q_critic.weights, feed_dict))
+  print(qs)
   biggest_v = qs[0]
   biggest_i = 0
   for i in range(num_ensemble -1):
@@ -52,6 +62,7 @@ def get_action_ensemble(sess, ensemble, sin, q_res, obs, act_acum):
       biggest_v = qs[i+1]
       biggest_i = i+1
   act_acum[biggest_i] = act_acum[biggest_i] + 1
+  print(biggest_i)
   return acts[biggest_i]
 
 
@@ -72,6 +83,7 @@ def run_multi_ddpg():
   steps_count = 1 #first init unit, reseted before use
   episode_reward = 1 #first init unit, reseted before use
   addrw_acum = np.zeros(num_ensemble, np.float32)
+
   for ep in range(episodes):
 
     act_acum = np.zeros(num_ensemble)
@@ -108,7 +120,7 @@ def run_multi_ddpg():
       # Choose action
       if enable_ensemble:
         if test:
-          action = get_action_ensemble(session, ensemble, sin, q_critic.q_critic, [observation], act_acum)[0]
+          action = get_action_ensemble(session, ensemble, sin, q_critic.q_critic, [observation], act_acum, addrw_mounted)[0]
         else:
           action = get_action_rnd_policy(session, ensemble[policy_rnd], sin, [observation])[0]
       else:

@@ -78,12 +78,10 @@ class WeightedByTDErrorAddingReward(CriticAggregation):
     def buildLayer(self):
         print('CriticAggregation::WeightedByTDErrorAddingReward_buildLayer')
 
-        self._adding_reward = tf.get_variable(name='adding_reward_var', dtype=tf.float32,
-                                           initializer=np.zeros(self._num_ensemble, np.float32))
-        print("**************")
-        print(self._adding_reward)
-        print("**************")
-        self._adding_reward = tf.reduce_sum([self._adding_reward, self._adding_reward_in], 0)
+        self._adding_reward = tf.constant(np.zeros(self._num_ensemble, np.float32))
+        #self._adding_reward_raw = tf.get_variable(name='adding_reward_var', dtype=tf.float32,
+                                           # initializer=np.zeros(self._num_ensemble, np.float32))
+        self._adding_reward = self._adding_reward + self._adding_reward_in
 
         weights_raw = tf.get_variable(name='weights_raw', dtype=tf.float32,
                                            initializer=np.zeros(self._num_ensemble, np.float32))
@@ -96,10 +94,16 @@ class WeightedByTDErrorAddingReward(CriticAggregation):
 
     def train(self, td, addrw):
         # return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
-        qs_update_t, weights_t,  adding_reward_t = self._session.run([self.qs_update, self.weights,  self._adding_reward], {self._td: td, self._adding_reward_in: addrw})
+        qs_update_t, weights_t,  adding_reward_t,  adding_reward_in_t = self._session.run([self.qs_update, self.weights,  self._adding_reward, self._adding_reward_in], {self._td: td, self._adding_reward_in: addrw})
+        # print("*********************************")
         # print("weights_t")
         # print(weights_t)
+        # print("adding_reward_t")
         # print(adding_reward_t)
+        # print("adding_reward_in_t")
+        # print(adding_reward_in_t)
+        # print("addrw")
+        # print(addrw)
         return weights_t
 
 class WeightedByAddingReward(CriticAggregation):
