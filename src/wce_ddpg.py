@@ -9,7 +9,7 @@
 
 import os
 import sys
-os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 dbg_weightstderror = 0
 
 import tensorflow as tf
@@ -30,6 +30,8 @@ from CriticAggregation import WeightedByTDErrorInvW
 from CriticAggregation import WeightedByTDErrorAddingReward
 from CriticAggregation import WeightedByTDErrorAndReward
 from CriticAggregation import WeightedByAddingReward
+from CriticAggregation import WeightedByFixedHalf
+from CriticAggregation import WeightedByFixedOne
 
 def get_action_ddpg(sess, network, obs):
   return sess.run(network.a_out, {network.s_in: obs})
@@ -38,21 +40,23 @@ def get_action_ensemble(sess, ensemble, sin, q_res, obs, act_acum, addrw):
   act_nodes = [e[0].a_out for e in ensemble]
   acts = sess.run(act_nodes, {sin: obs})
 
-  # print("addrw")
-  # print(addrw)
+  print("addrw")
+  print(addrw)
 
   qss = []
   for ine in range(num_ensemble):
-    feed_dict = {sin: obs, addingreward: addrw}
-    for j in range(num_ensemble):
-      feed_dict[ensemble[j][0].a_in] = acts[ine]
-    qss.append(sess.run(q_res, feed_dict))
-    # print("q")
-    # print(sess.run(ensemble[j][0].q, feed_dict))
-  # print("add_rw_in, qs")
+      feed_dict = {sin: obs, addingreward: addrw}
+      for j in range(num_ensemble):
+          feed_dict[ensemble[j][0].a_in] = acts[ine]
+      qss.append(sess.run(q_res, feed_dict))
+      print(feed_dict)
+      print("q, q_in")
+      print(sess.run(ensemble[j][0].q, feed_dict))
+      print(sess.run(q_critic._q_in, feed_dict))
+  print("add_rw_in, qin, qs")
   # print(sess.run(q_critic._adding_reward_in, feed_dict))
-  # print(sess.run(q_critic.weights, feed_dict))
-  # print(qss)
+  print(sess.run(q_critic.fixed, feed_dict))
+  print(qss)
   biggest_v = qss[0]
   biggest_i = 0
   for k in range(num_ensemble -1):
@@ -456,6 +460,14 @@ if enable_ensemble:
     q_critic = WeightedByAddingReward(session, qin, td, num_ensemble, addingreward)
   elif typeCriticAggregation == "TDError":
     q_critic = WeightedByTDError(session, qin, td, num_ensemble)
+  elif typeCriticAggregation == "FixedByHalf":
+    q_critic = WeightedByFixedHalf(session, qin, num_ensemble)
+  elif typeCriticAggregation == "FixedOneZero":
+    q_critic = WeightedByFixedOne(session, qin, num_ensemble, 0)
+  elif typeCriticAggregation == "FixedOneOne":
+    q_critic = WeightedByFixedOne(session, qin, num_ensemble, 1)
+  elif typeCriticAggregation == "FixedOneTwo":
+    q_critic = WeightedByFixedOne(session, qin, num_ensemble, 2)
   else:
     print("typeCriticAggregation")
     print(typeCriticAggregation)

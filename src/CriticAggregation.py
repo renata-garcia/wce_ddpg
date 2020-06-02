@@ -147,6 +147,45 @@ class WeightedByAddingReward(CriticAggregation):
         self._session.run([self.qs_update ], {self._td: td, self._adding_reward_in: addrw})
         return addrw
 
+class WeightedByFixedHalf(CriticAggregation):
+
+    def __init__(self, sess, qin, num_ensemble):
+        super().__init__()
+        self._session = sess
+        self._q_in = qin
+        self._num_ensemble = num_ensemble
+        self.q_critic = 0
+        self.fixed = tf.constant(0.5 * np.ones(self._num_ensemble, np.float32))
+
+
+    def buildLayer(self):
+        print('CriticAggregation::WeightedByFixedHalf')
+        self.q_critic = tf.reduce_sum((self._q_in * self.fixed))
+
+    def train(self, td, addrw):
+        return  0.5 * np.ones(self._num_ensemble, np.float32)
+
+class WeightedByFixedOne(CriticAggregation):
+
+    def __init__(self, sess, qin, num_ensemble, fixed_one):
+        super().__init__()
+        self._session = sess
+        self._q_in = qin
+        self._num_ensemble = num_ensemble
+        self.q_critic = 0
+        self._fixed_one = fixed_one
+
+    def buildLayer(self):
+        print('CriticAggregation::WeightedByFixedOne')
+
+        self._fixed = 0.0 * np.ones(self._num_ensemble, np.float32)
+        self._fixed[self._fixed_one] = 1.0
+        self.fixed = tf.constant(self._fixed)
+        self.q_critic = tf.reduce_sum((self._q_in * self.fixed))
+
+    def train(self, td, addrw):
+        return  self.fixed
+
 class WeightedByAverage(CriticAggregation):
 
     def __init__(self, sess, qin, td, num_ensemble):
