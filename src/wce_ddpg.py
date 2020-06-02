@@ -9,7 +9,7 @@
 
 import os
 import sys
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 dbg_weightstderror = 0
 
 import tensorflow as tf
@@ -28,6 +28,7 @@ from CriticAggregation import WeightedByTDError
 from CriticAggregation import WeightedByAverage
 from CriticAggregation import WeightedByTDErrorInvW
 from CriticAggregation import WeightedByTDErrorAddingReward
+from CriticAggregation import WeightedByTDErrorAndReward
 from CriticAggregation import WeightedByAddingReward
 
 def get_action_ddpg(sess, network, obs):
@@ -37,32 +38,28 @@ def get_action_ensemble(sess, ensemble, sin, q_res, obs, act_acum, addrw):
   act_nodes = [e[0].a_out for e in ensemble]
   acts = sess.run(act_nodes, {sin: obs})
 
-  #print("addrw")
-  #print(addrw)
+  # print("addrw")
+  # print(addrw)
 
-  # print(feed_dict)
-  qs = []
-  for i in range(num_ensemble):
+  qss = []
+  for ine in range(num_ensemble):
     feed_dict = {sin: obs, addingreward: addrw}
-    v_qin = []
     for j in range(num_ensemble):
-      feed_dict[ensemble[j][0].a_in] = acts[i]
-    qs.append(sess.run(q_res, feed_dict))
-    #print("q")
-    #print(sess.run(ensemble[j][0].q, feed_dict))
-  #print("add_rw_in,add_rw, weights, qs")
-  #print(sess.run(q_critic._adding_reward_in, feed_dict))
-  #print(sess.run(q_critic._adding_reward, feed_dict))
-  #print(sess.run(q_critic.weights, feed_dict))
-  #print(qs)
-  biggest_v = qs[0]
+      feed_dict[ensemble[j][0].a_in] = acts[ine]
+    qss.append(sess.run(q_res, feed_dict))
+    # print("q")
+    # print(sess.run(ensemble[j][0].q, feed_dict))
+  # print("add_rw_in, qs")
+  # print(sess.run(q_critic._adding_reward_in, feed_dict))
+  # print(sess.run(q_critic.weights, feed_dict))
+  # print(qss)
+  biggest_v = qss[0]
   biggest_i = 0
-  for i in range(num_ensemble -1):
-    if qs[i+1] > biggest_v:
-      biggest_v = qs[i+1]
-      biggest_i = i+1
+  for k in range(num_ensemble -1):
+    if qss[k+1] > biggest_v:
+      biggest_v = qss[k+1]
+      biggest_i = k+1
   act_acum[biggest_i] = act_acum[biggest_i] + 1
-  #print(biggest_i)
   return acts[biggest_i]
 
 
@@ -453,6 +450,8 @@ if enable_ensemble:
     q_critic = WeightedByTDErrorInvW(session, qin, td, num_ensemble)
   elif typeCriticAggregation == "TDErrorAddRw":
     q_critic = WeightedByTDErrorAddingReward(session, qin, td, num_ensemble, addingreward)
+  elif typeCriticAggregation == "TDErrorAndRw":
+    q_critic = WeightedByTDErrorAndReward(session, qin, td, num_ensemble, addingreward)
   elif typeCriticAggregation == "AddRw":
     q_critic = WeightedByAddingReward(session, qin, td, num_ensemble, addingreward)
   elif typeCriticAggregation == "TDError":

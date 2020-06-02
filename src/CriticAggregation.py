@@ -79,14 +79,11 @@ class WeightedByTDErrorAddingReward(CriticAggregation):
         print('CriticAggregation::WeightedByTDErrorAddingReward_buildLayer')
 
         self._adding_reward = tf.constant(np.zeros(self._num_ensemble, np.float32))
-        #self._adding_reward_raw = tf.get_variable(name='adding_reward_var', dtype=tf.float32,
-                                           # initializer=np.zeros(self._num_ensemble, np.float32))
-        self._adding_reward = self._adding_reward + self._adding_reward_in
-
         weights_raw = tf.get_variable(name='weights_raw', dtype=tf.float32,
                                            initializer=np.zeros(self._num_ensemble, np.float32))
+
         self.weights = tf.nn.softmax(weights_raw)
-        self.q_critic = tf.reduce_sum((self._q_in * (self.weights + self._adding_reward)))
+        self.q_critic = tf.reduce_sum((self._q_in * (self.weights + self._adding_reward_in)))
 
         # TODO testar retirando o treinamento, resultado deve ser igual a ter média
         qs_loss = tf.reduce_sum(((self._td ** 2) * self.weights))
@@ -95,16 +92,33 @@ class WeightedByTDErrorAddingReward(CriticAggregation):
     def train(self, td, addrw):
         # return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
         qs_update_t, weights_t,  adding_reward_t,  adding_reward_in_t = self._session.run([self.qs_update, self.weights,  self._adding_reward, self._adding_reward_in], {self._td: td, self._adding_reward_in: addrw})
-        # print("*********************************")
-        # print("weights_t")
-        # print(weights_t)
-        # print("adding_reward_t")
-        # print(adding_reward_t)
-        # print("adding_reward_in_t")
-        # print(adding_reward_in_t)
-        # print("addrw")
-        # print(addrw)
         return weights_t
+
+class WeightedByTDErrorAndReward(CriticAggregation):
+
+    def __init__(self, sess, qin, td, num_ensemble, adding_reward):
+        super().__init__()
+        self._session = sess
+        self._q_in = qin
+        self._adding_reward_in = adding_reward
+        self._td = td
+        self._lr_critic = 0.0001
+        self._num_ensemble = num_ensemble
+        self.q_critic = 0
+
+    def buildLayer(self):
+        print('CriticAggregation::WeightedByTDErrorAndReward_buildLayer')
+
+        weights_raw = tf.get_variable(name='weights_raw', dtype=tf.float32,
+                                           initializer=np.zeros(self._num_ensemble, np.float32))
+        self.weights = tf.nn.softmax(weights_raw) + self._adding_reward_in
+        self.q_critic = tf.reduce_sum((self._q_in * self.weights))
+
+        qs_loss = tf.reduce_sum(((self._td ** 2) * self.weights))
+        self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(qs_loss, name='qs_update')
+
+    def train(self, td, addrw):
+        return  self._session.run([self.qs_update, self.weights,  self._adding_reward_in], {self._td: td, self._adding_reward_in: addrw})[1]
 
 class WeightedByAddingReward(CriticAggregation):
 
@@ -119,21 +133,19 @@ class WeightedByAddingReward(CriticAggregation):
         self.q_critic = 0
 
     def buildLayer(self):
-        print('CriticAggregation::WeightedByAddingReward_buildLayer')
+        print('CriticAggregation::WeightedByTDErrorAndReward_buildLayer')
 
-        self._adding_reward = tf.get_variable(name='adding_reward_var', dtype=tf.float32,
+        weights_raw = tf.get_variable(name='weights_raw', dtype=tf.float32,
                                            initializer=np.zeros(self._num_ensemble, np.float32))
-        self._adding_reward = tf.reduce_sum([self._adding_reward, self._adding_reward_in], 0)
-        self.q_critic = tf.reduce_sum((self._q_in * self._adding_reward))
+        self.weights = tf.nn.softmax(weights_raw)
+        self.q_critic = tf.reduce_sum((self._q_in * self._adding_reward_in))
 
-        # TODO testar retirando o treinamento, resultado deve ser igual a ter média
-        qs_loss = tf.reduce_sum(((self._td ** 2) * self._adding_reward))
+        qs_loss = tf.reduce_sum(((self._td ** 2) * self.weights * self._adding_reward_in))
         self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(qs_loss, name='qs_update')
 
     def train(self, td, addrw):
-        # return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
-        qs_update_t, adding_reward_t = self._session.run([self.qs_update, self._adding_reward], {self._td: td, self._adding_reward_in: addrw})
-        return adding_reward_t
+        self._session.run([self.qs_update ], {self._td: td, self._adding_reward_in: addrw})
+        return addrw
 
 class WeightedByAverage(CriticAggregation):
 
