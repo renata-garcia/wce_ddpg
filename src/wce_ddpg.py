@@ -355,8 +355,8 @@ print(sys.argv)
 file_yaml = sys.argv[1]
 print(file_yaml)
 typeCriticAggregation = sys.argv[2]
-run_offset = sys.argv[3]
-using_interval = int(sys.argv[4])
+using_interval = sys.argv[3]
+run_offset = sys.argv[4]
 print_cvs = int(sys.argv[5])
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
@@ -386,7 +386,7 @@ for x in cfg['experiment']['agent']['policy']['policy']:
   tmp['layer1'] = int(x['representation']['file'].split()[7])
   tmp['layer2'] = int(x['representation']['file'].split()[8])
   tmp['tau'] =  float(x['representation']['tau'])
-  if using_interval:
+  if using_interval == "1":
     tmp['interval'] =  float(x['representation']['interval'])
   else:
     tmp['interval'] = 1.0
@@ -501,9 +501,8 @@ session.run(tf.global_variables_initializer())
 # Initialize replay memory
 memory = ReplayMemory.ReplayMemory()
 
-
 #ext =  cfg['experiment']['run_offset'] + #TODO
-file_name = cfg['experiment']['output'] + typeCriticAggregation + "-" + run_offset + ".txt"
+file_name = cfg['experiment']['output'] + typeCriticAggregation + "-" + run_offset + using_interval + ".txt"
 file_output = open("../" + file_name, "w")
 file_output.close()
 
