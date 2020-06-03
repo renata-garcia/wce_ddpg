@@ -356,7 +356,8 @@ file_yaml = sys.argv[1]
 print(file_yaml)
 typeCriticAggregation = sys.argv[2]
 run_offset = sys.argv[3]
-print_cvs = int(sys.argv[4])
+using_interval = int(sys.argv[4])
+print_cvs = int(sys.argv[5])
 with open(file_yaml, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
@@ -385,7 +386,11 @@ for x in cfg['experiment']['agent']['policy']['policy']:
   tmp['layer1'] = int(x['representation']['file'].split()[7])
   tmp['layer2'] = int(x['representation']['file'].split()[8])
   tmp['tau'] =  float(x['representation']['tau'])
-  tmp['config_ddpg'] = ddpg_cfg.DDPGNetworkConfig(tmp['lr_actor'], tmp['lr_critic'], tmp['act1'], tmp['act2'], tmp['layer1'], tmp['layer2'], tmp['tau'])
+  if using_interval:
+    tmp['interval'] =  float(x['representation']['interval'])
+  else:
+    tmp['interval'] = 1.0
+  tmp['config_ddpg'] = ddpg_cfg.DDPGNetworkConfig(tmp['lr_actor'], tmp['lr_critic'], tmp['act1'], tmp['act2'], tmp['layer1'], tmp['layer2'], tmp['tau'], tmp['interval'])
   cfg_ens.append(tmp)
 
 ii = 0
@@ -433,7 +438,7 @@ if enable_ensemble:
     vars = tf.trainable_variables()[prev_vars:]
     tau = cfg_ens[ne]['tau']
     #TODO dividir o tau pelo interval....
-    update_ops = [vars[ix + len(vars) // 2].assign_add(tau * (var.value() - vars[ix + len(vars) // 2].value())) for
+    update_ops = [vars[ix + len(vars) // 2].assign_add((tau / cfg_ens[ne]['config_ddpg']._interval) * (var.value() - vars[ix + len(vars) // 2].value())) for
                   ix, var in enumerate(vars[0:len(vars) // 2])]
     ensemble.append((network, target_network, update_ops))
     #print("Create network ne:", ne, ", lr_actor: ", cfg_ens[ne]['lr_actor'],  ", lr_critic: ", cfg_ens[ne]['lr_critic'])

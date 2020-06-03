@@ -13,22 +13,24 @@ class DDPGNetworkNode(ddpg_cfg.DDPGNetworkConfig):
     self.lr_critic = config._lrcritic
     self.layer1_size = config._layer1
     self.layer2_size = config._layer2
-    #print("DDPGNetworkNode: self.lr_actor: ", self.lr_actor, " self.lr_critic: ", self.lr_critic, " self.layer1_size: ", self.layer1_size, " ,self.layer2_size; ", self.layer2_size)
+    self.act1 = config._act1
+    self.act2 = config._act2
+    config.print()
 
     prev_vars = len(tf.trainable_variables())
 
     # Actor network
-    ha1 = Dense(self.layer1_size, activation='relu', name='h_actor1')(self.s_in)
-    ha2 = Dense(self.layer2_size, activation='relu', name='h_actor2')(ha1)
+    ha1 = Dense(self.layer1_size, activation=self.act1[1:-1], name='h_actor1')(self.s_in)
+    ha2 = Dense(self.layer2_size, activation=self.act1[1:-1], name='h_actor2')(ha1)
     self.a_out = a_max * Dense(act, activation='tanh', name='a_out')(ha2)
     theta = tf.trainable_variables()[prev_vars:]
 
     # Critic network
     self.a_in = tf.placeholder_with_default(tf.stop_gradient(self.a_out), shape=(None, act), name='a_in')
-    hq1 = Dense(self.layer1_size, activation='relu', name='h_critic1')(self.s_in)
+    hq1 = Dense(self.layer1_size, activation=self.act1[1:-1], name='h_critic1')(self.s_in)
     hc1 = Concatenate()([hq1, self.a_in])
-    hq2 = Dense(self.layer2_size, activation='relu', name='h_critic2')(hc1)
-    self.q = Dense(1, activation='linear', name='q1')(hq2)
+    hq2 = Dense(self.layer2_size, activation=self.act1[1:-1], name='h_critic2')(hc1)
+    self.q = Dense(1, activation=self.act2[1:-1], name='q1')(hq2)
 
     # Actor network update
     dq_da = tf.gradients(self.q, self.a_in, name='dq_da')[0]
