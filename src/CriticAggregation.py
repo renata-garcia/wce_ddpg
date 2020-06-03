@@ -174,17 +174,19 @@ class WeightedByFixedOne(CriticAggregation):
         self._num_ensemble = num_ensemble
         self.q_critic = 0
         self._fixed_one = fixed_one
+        self._fixed = np.zeros(self._num_ensemble, np.float32)
+        self._fixed[self._fixed_one] = 1.0
+        self.fixed = tf.constant(self._fixed)
 
     def buildLayer(self):
         print('CriticAggregation::WeightedByFixedOne')
 
-        self._fixed = 0.0 * np.ones(self._num_ensemble, np.float32)
-        self._fixed[self._fixed_one] = 1.0
-        self.fixed = tf.constant(self._fixed)
         self.q_critic = tf.reduce_sum((self._q_in * self.fixed))
 
     def train(self, td, addrw):
-        return  self.fixed
+        r = np.zeros(self._num_ensemble, np.float32)
+        r[self._fixed_one] = 1.0
+        return  r
 
 class WeightedByAverage(CriticAggregation):
 
