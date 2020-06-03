@@ -40,8 +40,8 @@ def get_action_ensemble(sess, ensemble, sin, q_res, obs, act_acum, addrw):
   act_nodes = [e[0].a_out for e in ensemble]
   acts = sess.run(act_nodes, {sin: obs})
 
-  print("addrw")
-  print(addrw)
+  # print("addrw")
+  # print(addrw)
 
   qss = []
   for ine in range(num_ensemble):
@@ -49,14 +49,14 @@ def get_action_ensemble(sess, ensemble, sin, q_res, obs, act_acum, addrw):
       for j in range(num_ensemble):
           feed_dict[ensemble[j][0].a_in] = acts[ine]
       qss.append(sess.run(q_res, feed_dict))
-      print(feed_dict)
-      print("q, q_in")
-      print(sess.run(ensemble[j][0].q, feed_dict))
-      print(sess.run(q_critic._q_in, feed_dict))
-  print("add_rw_in, qin, qs")
+      # print(feed_dict)
+      # print("q, q_in")
+      # print(sess.run(ensemble[j][0].q, feed_dict))
+      # print(sess.run(q_critic._q_in, feed_dict))
+  # print("add_rw_in, qin, qs")
   # print(sess.run(q_critic._adding_reward_in, feed_dict))
-  print(sess.run(q_critic.fixed, feed_dict))
-  print(qss)
+  # print(sess.run(q_critic.fixed, feed_dict))
+  # print(qss)
   biggest_v = qss[0]
   biggest_i = 0
   for k in range(num_ensemble -1):
@@ -137,7 +137,7 @@ def run_multi_ddpg():
       observation = env.get_obs_trig(observation)
 
       episode_reward += reward
-      reward = reward * 0.01 #TODO reward_scale
+      # reward = reward #TODO reward_scale
 
       # Add to replay memory
       memory.add(prev_obs, action, reward, observation)
@@ -163,7 +163,7 @@ def run_multi_ddpg():
                 nextq = ensemble[ne][1].get_value(nobs)
 
                 # Calculate target using SARSA
-                target = [rew[ii] + cfg_ens[ne]['gamma'] * nextq[ii] for ii in range(len(nextq))]
+                target = [rew[ii]*cfg_ens[ne]['reward_scale'] + cfg_ens[ne]['gamma'] * nextq[ii] for ii in range(len(nextq))]
 
                 # Update critic using target and actor using gradient
                 ensemble[ne][0].train(obs, act, target)
@@ -237,7 +237,7 @@ def run_multi_ddpg():
               nextq = target_network.get_value(nobs)
 
               # Calculate target using SARSA
-              target = [rew[ii] + cfg_ens[0]['gamma'] * nextq[ii] for ii in range(len(nextq))]
+              target = [rew[ii]*cfg_ens[0]['reward_scale'] + cfg_ens[0]['gamma'] * nextq[ii] for ii in range(len(nextq))]
 
               # Update critic using target and actor using gradient
               network.train(obs, act, target)
@@ -393,7 +393,9 @@ for x in cfg['experiment']['agent']['predictor']['predictor']:
   tmp = cfg_ens[ii]
   ii = ii + 1
   tmp['gamma'] = x['gamma']
-  tmp['reward_scale'] = x['reward_scale'] #TODO unused
+  tmp['reward_scale'] = x['reward_scale']
+  tmp['config_ddpg'].setGamma(tmp['gamma'])
+  tmp['config_ddpg'].setRWScale(tmp['reward_scale'])
 
 cfg_agt = {}
 cfg_agt['replay_steps'] = cfg['experiment']['agent']['replay_steps']
@@ -445,8 +447,8 @@ if enable_ensemble:
   addrw = np.zeros(num_ensemble, dtype=np.float32)
   addingreward = tf.placeholder_with_default(tf.stop_gradient(addrw), shape=(num_ensemble), name='addingreward')
   # addingreward = tf.placeholder(tf.float32, shape=(num_ensemble), name='addingreward')
-  print("addingreward")
-  print(addingreward)
+  # print("addingreward")
+  # print(addingreward)
 
   if typeCriticAggregation == "Average":
     q_critic = WeightedByAverage(session, qs1, td, num_ensemble)
@@ -510,7 +512,6 @@ print("# Run episodes")
 episodes = int(cfg_agt['steps']/steps_p_ep)
 replay_steps = cfg_agt['replay_steps']
 batch_size = cfg_agt['batch_size']
-reward_scale = cfg_ens[0]['reward_scale']
 
 seed(1234)
 
