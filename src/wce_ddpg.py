@@ -504,7 +504,7 @@ session.run(tf.global_variables_initializer())
 memory = ReplayMemory.ReplayMemory()
 
 #ext =  cfg['experiment']['run_offset'] + #TODO
-file_name = cfg['experiment']['output'] + typeCriticAggregation + "-" + run_offset + using_interval + ".txt"
+file_name = cfg['experiment']['output'] + typeCriticAggregation + "-" + using_interval + run_offset + ".txt"
 file_output = open("../" + file_name, "w")
 file_output.close()
 
