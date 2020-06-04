@@ -169,7 +169,9 @@ def run_multi_ddpg():
                 ensemble[ne][0].train(obs, act, target)
 
                 # Update
-                session.run(ensemble[ne][2])
+                if (steps_count % (cfg_ens[ne]['config_ddpg']._interval) == 0):
+                  session.run(ensemble[ne][2])
+                  # print(steps_count)
 
                 # Calculate Q value of state
                 td_l = [ target[ii] - q[ii] for ii in range(len(q)) ]
@@ -438,7 +440,7 @@ if enable_ensemble:
     vars = tf.trainable_variables()[prev_vars:]
     tau = cfg_ens[ne]['tau']
     #TODO dividir o tau pelo interval....
-    update_ops = [vars[ix + len(vars) // 2].assign_add((tau / cfg_ens[ne]['config_ddpg']._interval) * (var.value() - vars[ix + len(vars) // 2].value())) for
+    update_ops = [vars[ix + len(vars) // 2].assign_add(tau * (var.value() - vars[ix + len(vars) // 2].value())) for
                   ix, var in enumerate(vars[0:len(vars) // 2])]
     ensemble.append((network, target_network, update_ops))
     #print("Create network ne:", ne, ", lr_actor: ", cfg_ens[ne]['lr_actor'],  ", lr_critic: ", cfg_ens[ne]['lr_critic'])
