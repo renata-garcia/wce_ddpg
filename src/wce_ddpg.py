@@ -74,7 +74,7 @@ def get_action_rnd_policy(sess, network, sin, obs):
 def run_multi_ddpg():
   global ne, file_output, file_name
 
-  w_train = 0
+  w_train = np.ones(num_ensemble) * (1/num_ensemble)
   weights_mounted = np.zeros((num_ensemble))
   td_mounted = np.zeros((num_ensemble))
   target_mounted = np.zeros((num_ensemble))
@@ -91,9 +91,36 @@ def run_multi_ddpg():
     act_acum = np.zeros(num_ensemble)
 
     #TODO selecionar a politica alternadamente
-    #policy_rnd = int(random() * num_ensemble)
-    policy_rnd = (ep%num_ensemble)
-    # print("ep %d, policy_rnd %d, num_ensemble %d" % (ep, policy_rnd, num_ensemble))
+    itmode = int(iteration_mode)
+    num_rnd = random()
+    if itmode == ddpg_cfg.IterationMode.alternately_persistent:
+      policy_rnd = (ep % num_ensemble)
+    elif itmode == ddpg_cfg.IterationMode.random:
+      policy_rnd = int(num_rnd * num_ensemble)
+    elif itmode == ddpg_cfg.IterationMode.random_weighted:
+      chosen_arrow = num_rnd;
+      sum = 0
+      policy_rnd = 0
+      for wt in w_train:
+        sum += wt
+        if chosen_arrow > sum:
+          policy_rnd += 1
+        else:
+          break
+    elif itmode == ddpg_cfg.IterationMode.online:
+      print("wce_ddpg.py::elif iteration_mode == ddpg_cfg.IterationMode.online::  TODO") #TODO
+      exit(-1)
+    else:
+      print("wce_ddpg.py::iteration_mode::", iteration_mode)
+      exit(-1)
+
+    # print("wce_ddpg.py::elif iteration_mode == ddpg_cfg.IterationMode.random_weighted::if chosen_arrow > sum:")
+    # print(w_train)
+    # print(sum)
+    # print(chosen_arrow)
+    # print(policy_rnd)
+    # print("ep %d, policy_rnd %d, num_ensemble %d, num_rnd %0.01f, iteration_mode %s, w_train::" % (ep, policy_rnd, num_ensemble, num_rnd, iteration_mode))
+    # print(w_train)
 
     addrw_acum[policy_rnd] += episode_reward/steps_count
     if (ep%num_ensemble == 0):
@@ -358,7 +385,7 @@ print(sys.argv)
 file_yaml = sys.argv[1]
 print(file_yaml)
 typeCriticAggregation = sys.argv[2]
-using_interval = sys.argv[3]
+iteration_mode = sys.argv[3] #0=alternately_persistentç 1=randweightedç 2=online
 run_offset = sys.argv[4]
 print_cvs = int(sys.argv[5])
 with open(file_yaml, 'r') as ymlfile:
@@ -389,10 +416,7 @@ for x in cfg['experiment']['agent']['policy']['policy']:
   tmp['layer1'] = int(x['representation']['file'].split()[7])
   tmp['layer2'] = int(x['representation']['file'].split()[8])
   tmp['tau'] =  float(x['representation']['tau'])
-  if using_interval == "1":
-    tmp['interval'] =  float(x['representation']['interval'])
-  else:
-    tmp['interval'] = 1.0
+  tmp['interval'] =  float(x['representation']['interval'])
   tmp['config_ddpg'] = ddpg_cfg.DDPGNetworkConfig(tmp['lr_actor'], tmp['lr_critic'], tmp['act1'], tmp['act2'], tmp['layer1'], tmp['layer2'], tmp['tau'], tmp['interval'])
   cfg_ens.append(tmp)
 
@@ -505,7 +529,7 @@ session.run(tf.global_variables_initializer())
 memory = ReplayMemory.ReplayMemory()
 
 #ext =  cfg['experiment']['run_offset'] + #TODO
-file_name = cfg['experiment']['output'] + typeCriticAggregation + "-" + using_interval + run_offset + ".txt"
+file_name = cfg['experiment']['output'] + typeCriticAggregation + "-" + iteration_mode + run_offset + ".txt"
 file_output = open("../" + file_name, "w")
 file_output.close()
 

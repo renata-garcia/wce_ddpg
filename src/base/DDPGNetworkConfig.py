@@ -1,4 +1,11 @@
 
+class IterationMode:
+  alternately_persistent = 0;
+  random = 1;
+  random_weighted = 2;
+  online = 3;
+
+
 class DDPGNetworkConfig:
   def __init__(self, lractor, lrcritic, act1, act2, layer1, layer2, tau, interval):
     # Protected member
