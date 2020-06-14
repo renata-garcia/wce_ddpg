@@ -3,7 +3,7 @@ experiment:
   runs: 1
   run_offset: 0
   trials: 0
-  steps: 100000
+  steps: 200000
   rate: 0
   test_interval: 10
   output: agent_cp_2good_1bad_j0_

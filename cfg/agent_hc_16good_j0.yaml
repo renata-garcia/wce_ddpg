@@ -3,7 +3,7 @@ experiment:
   runs: 1
   run_offset: 0
   trials: 0
-  steps: 600000
+  steps: 1200000
   rate: 0
   test_interval: 10
   output: half_cheetah_wce_good_j0_
