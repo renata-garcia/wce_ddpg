@@ -155,7 +155,7 @@ class WeightedByFixedHalf(CriticAggregation):
         self._q_in = qin
         self._num_ensemble = num_ensemble
         self.q_critic = 0
-        self.fixed = tf.constant(0.5 * np.ones(self._num_ensemble, np.float32))
+        self.fixed = tf.constant((1/self._num_ensemble) * np.ones(self._num_ensemble, np.float32))
 
 
     def buildLayer(self):
@@ -163,7 +163,7 @@ class WeightedByFixedHalf(CriticAggregation):
         self.q_critic = tf.reduce_sum((self._q_in * self.fixed))
 
     def train(self, td, addrw):
-        return  0.5 * np.ones(self._num_ensemble, np.float32)
+        return  (1/self._num_ensemble) * np.ones(self._num_ensemble, np.float32)
 
 class WeightedByFixedOne(CriticAggregation):
 
@@ -202,5 +202,6 @@ class WeightedByAverage(CriticAggregation):
         self.q_critic = keras.layers.average(self._q_in)
 
     def train(self, td, addrw):
-        run_weights = [0.5 for ii in range(self.num_ensemble_)]
+        fixed = 1/self.num_ensemble_
+        run_weights = [fixed for ii in range(self.num_ensemble_)]
         return run_weights
