@@ -99,11 +99,11 @@ def run_multi_ddpg():
       policy_rnd = int(num_rnd * num_ensemble)
     elif itmode == ddpg_cfg.IterationMode.random_weighted:
       chosen_arrow = num_rnd;
-      sum = 0
+      sum_w_pol = 0
       policy_rnd = 0
       for wt in w_train:
-        sum += wt
-        if chosen_arrow > sum:
+        sum_w_pol += wt
+        if chosen_arrow > sum_w_pol:
           policy_rnd += 1
         else:
           break
@@ -114,9 +114,9 @@ def run_multi_ddpg():
       print("wce_ddpg.py::iteration_mode::", iteration_mode)
       exit(-1)
 
-    # print("wce_ddpg.py::elif iteration_mode == ddpg_cfg.IterationMode.random_weighted::if chosen_arrow > sum:")
+    # print("wce_ddpg.py::elif iteration_mode == ddpg_cfg.IterationMode.random_weighted::if chosen_arrow > sum_w_pol:")
     # print(w_train)
-    # print(sum)
+    # print(sum_w_pol)
     # print(chosen_arrow)
     # print(policy_rnd)
     # print("ep %d, policy_rnd %d, num_ensemble %d, num_rnd %0.01f, iteration_mode %s, w_train::" % (ep, policy_rnd, num_ensemble, num_rnd, iteration_mode))
