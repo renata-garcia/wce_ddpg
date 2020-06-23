@@ -9,7 +9,7 @@
 
 import os
 import sys
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 dbg_weightstderror = 0
 
 import tensorflow as tf
@@ -73,6 +73,7 @@ def get_action_rnd_policy(sess, network, sin, obs):
 
 def run_multi_ddpg():
   global ne, file_output, file_name
+  online_iteration_mode = 0
 
   w_train = np.ones(num_ensemble) * (1/num_ensemble)
   weights_mounted = np.zeros((num_ensemble))
@@ -98,7 +99,7 @@ def run_multi_ddpg():
     elif itmode == ddpg_cfg.IterationMode.random:
       policy_rnd = int(num_rnd * num_ensemble)
     elif itmode == ddpg_cfg.IterationMode.random_weighted:
-      chosen_arrow = num_rnd;
+      chosen_arrow = num_rnd
       sum_w_pol = 0
       policy_rnd = 0
       for wt in w_train:
@@ -108,8 +109,7 @@ def run_multi_ddpg():
         else:
           break
     elif itmode == ddpg_cfg.IterationMode.online:
-      print("wce_ddpg.py::elif iteration_mode == ddpg_cfg.IterationMode.online::  TODO") #TODO
-      exit(-1)
+      online_iteration_mode = 1
     else:
       print("wce_ddpg.py::iteration_mode::", iteration_mode)
       exit(-1)
@@ -121,14 +121,14 @@ def run_multi_ddpg():
     # print(policy_rnd)
     # print("ep %d, policy_rnd %d, num_ensemble %d, num_rnd %0.01f, iteration_mode %s, w_train::" % (ep, policy_rnd, num_ensemble, num_rnd, iteration_mode))
     # print(w_train)
-
-    addrw_acum[policy_rnd] += episode_reward/steps_count
-    if (ep%num_ensemble == 0):
-      addrw_sum = np.sum(addrw_acum)
-      for ii in range(num_ensemble):
-        addrw_mounted[ii] = addrw_acum[ii]/addrw_sum
-      # print("addrw_mounted")
-      # print(addrw_mounted)
+    if (itmode != ddpg_cfg.IterationMode.online):
+      addrw_acum[policy_rnd] += episode_reward/steps_count
+      if (ep%num_ensemble == 0):
+        addrw_sum = np.sum(addrw_acum)
+        for ii in range(num_ensemble):
+          addrw_mounted[ii] = addrw_acum[ii]/addrw_sum
+        # print("addrw_mounted")
+        # print(addrw_mounted)qqqqqq
 
     steps_acum = steps_acum + steps_count
     steps_count = 0
@@ -148,7 +148,7 @@ def run_multi_ddpg():
       steps_count = steps_count + 1
       # Choose action
       if enable_ensemble:
-        if test:
+        if test or online_iteration_mode:
           action = get_action_ensemble(session, ensemble, sin, q_critic.q_critic, [observation], act_acum, addrw_mounted)[0]
         else:
           action = get_action_rnd_policy(session, ensemble[policy_rnd], sin, [observation])[0]
