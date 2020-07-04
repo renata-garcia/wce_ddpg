@@ -45,8 +45,6 @@ class DDPGNetworkNode(ddpg_cfg.DDPGNetworkConfig):
     return self.session.run(self.q, {self.s_in: obs})
 
   def train(self, obs, act, q_target):
-    # Train critic
-    self.session.run(self.q_update, {self.s_in: obs, self.a_in: act, self.q_target: q_target})
-    # Train actor
-    self.session.run(self.a_update, {self.s_in: obs})
+    # Train critic and Train actor
+    self.session.run([self.q_update,self.a_update], {self.s_in: obs, self.a_in: act, self.q_target: q_target})
 

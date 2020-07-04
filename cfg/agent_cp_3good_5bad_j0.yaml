@@ -6,7 +6,7 @@ experiment:
   steps: 100000
   rate: 0
   test_interval: 10
-  output: agent_cp_3good_4bad_j0_
+  output: agent_cp_3good_5bad_j0_
   save_every: never
   
   agent:
