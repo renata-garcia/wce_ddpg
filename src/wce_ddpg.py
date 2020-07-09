@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 import base.Environments as be
 import base.DDPGNetworkConfig as ddpg_cfg
+import DDPGNetworkEnsemble
 import base.Online_run as rl
 from random import random
 from random import seed
@@ -122,9 +123,9 @@ def run_multi_ddpg():
       steps_count = steps_count + 1
       # Choose action
       if test or online_iteration_mode:
-        action = online_run.get_action(session, ensemble, sin, [observation], addingreward, q_critic.q_critic, act_acum, addrw_mounted)[0]
+        action = online_run.get_action(session, ddpgne._ensemble, sin, [observation], addingreward, q_critic.q_critic, act_acum, addrw_mounted)[0]
       else:
-        action = get_action_rnd_policy(session, ensemble[policy_rnd], sin, [observation])[0]
+        action = get_action_rnd_policy(session, ddpgne._ensemble[policy_rnd], sin, [observation])[0]
 
       if not test:
         noise = 0.85 * noise + np.random.normal(scale=[1])
@@ -152,7 +153,7 @@ def run_multi_ddpg():
                                                                                                file_name, nobs, obs,
                                                                                                rew, reward,
                                                                                                steps_count,
-                                                                                               weights_mounted, ensemble,
+                                                                                               weights_mounted, ddpgne,
                                                                                                cfg_ens, q_critic, batch_size, session)
       if done:
         break
@@ -329,27 +330,16 @@ session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 print("# Create networks")
 # Create networks
 sin = tf.placeholder(tf.float32, shape=(None, env.get_obs()), name='s_in')
-qtarget = tf.placeholder(tf.float32, shape=(None, 1), name='target')
 td = tf.placeholder(tf.float32, shape=(None, num_ensemble), name='td')
 
 
 ensemble = [] #DDPGNetworkEnsemble
 if enable_ensemble:
-  for ne in range(num_ensemble):
-    prev_vars = len(tf.trainable_variables())
-    network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env._env.action_space.shape[0], max_action, cfg_ens[ne]['config_ddpg']) #cfg_ens[ne]['lr_actor'], cfg_ens[ne]['lr_critic'])
-    target_network = DDPGNetworkNode.DDPGNetworkNode(session, sin, qtarget, env._env.action_space.shape[0], max_action, cfg_ens[ne]['config_ddpg']) #, cfg_ens[ne]['lr_actor'], cfg_ens[ne]['lr_critic'])
-    vars = tf.trainable_variables()[prev_vars:]
-    tau = cfg_ens[ne]['tau']
-    #TODO dividir o tau pelo interval....
-    update_ops = [vars[ix + len(vars) // 2].assign_add(tau * (var.value() - vars[ix + len(vars) // 2].value())) for
-                  ix, var in enumerate(vars[0:len(vars) // 2])]
-    ensemble.append((network, target_network, update_ops))
-    #print("Create network ne:", ne, ", lr_actor: ", cfg_ens[ne]['lr_actor'],  ", lr_critic: ", cfg_ens[ne]['lr_critic'])
+  ddpgne = DDPGNetworkEnsemble.DDPGNetworkEnsemble(session, sin, cfg_ens, env._env.action_space.shape[0], num_ensemble, max_action)
 
   qs1 = []
   for i in range(num_ensemble):
-    qs1.append(ensemble[i][0].q)
+    qs1.append(ddpgne._ensemble[i][0].q)
   qs = tf.reshape(qs1, [1,num_ensemble])
   qin = tf.placeholder_with_default(tf.stop_gradient(qs), shape=(None, num_ensemble), name='qin')
 
@@ -426,4 +416,5 @@ seed(1234)
 # Run episodes
 
 run_multi_ddpg()
+
 
