@@ -41,13 +41,12 @@ class DDPGNetworkNode(ddpg_cfg.DDPGNetworkConfig):
     q_loss = tf.losses.mean_squared_error(self.q_target, self.q)
     self.q_update = tf.train.AdamOptimizer(self.lr_critic).minimize(q_loss, name='q_update')
 
-  def get_value(self, obs):
-    return self.session.run(self.q, {self.s_in: obs})
-
-  def train(self, obs, act, q_target):
-    # TODO IMPORTANT: TEST MORE BEFORE TRYING JOINT THE TWO TRAIN FUNCTION
-    # Train critic and Train actor
-    # self.session.run([self.q_update, self.a_update], {self.s_in: obs, self.a_in: act, self.q_target: q_target})
-    self.session.run(self.q_update, {self.s_in: obs, self.a_in: act, self.q_target: q_target})
-    self.session.run(self.a_update, {self.s_in: obs})
-
+  # def get_value(self, obs):
+  #   return self.session.run(self.q, {self.s_in: obs})
+  #
+  # def train(self, obs, act, q_target):
+  #   # IMPORTANT: DO NOT TRYING JOINT THE TWO TRAIN FUNCTION (TESTS NOT PASSED)
+  #   # Train critic and Train actor
+  #   self.session.run(self.q_update, {self.s_in: obs, self.a_in: act, self.q_target: q_target})
+  #   self.session.run(self.a_update, {self.s_in: obs})
+  #

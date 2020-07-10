@@ -11,9 +11,8 @@ class Online_run(): #TODO separe files and use design patterns
     print("class Online_run")
 
 class DDPG_single(Online_run):
-  def __init__(self,num_ensemble, dbg_weightstderror, print_cvs):
+  def __init__(self,num_ensemble, print_cvs):
     self._num_ensemble = num_ensemble
-    self._dbg_weightstderror = dbg_weightstderror
     self._print_cvs = print_cvs
     print("class DDPG_single")
 
@@ -21,7 +20,7 @@ class DDPG_single(Online_run):
       return sess.run(network.a_out, {network.s_in: obs})
 
   def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
-                       weights_mounted, ensemble, cfg_ens, q_critic, batch_size, session):
+            weights_mounted, ddpgne, cfg_ens, q_critic, batch_size, session):
     ## TRAIN ACTOR CRITIC
     # Calculate Q value of next state
     nextq = target_network.get_value(nobs)
@@ -31,8 +30,10 @@ class DDPG_single(Online_run):
 
     # Update critic using target and actor using gradient
     network.train(obs, act, target)
-    # Slowly update target network
-    session.run(update_ops)
+    if (steps_count % (cfg_ens[ne]['config_ddpg']._interval) == 0):
+      # Slowly update target network
+      session.run(update_ops)
+
     ## END TRAIN ACTOR CRITIC
 
 class DDPG_ensemble(Online_run):

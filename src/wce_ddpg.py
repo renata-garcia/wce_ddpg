@@ -275,7 +275,7 @@ num_ensemble = len(cfg['experiment']['agent']['policy']['policy'])
 
 if num_ensemble == 1:
   enable_ensemble = 0
-  online_run = rl.DDPG_single(num_ensemble, dbg_weightstderror, print_cvs)
+  online_run = rl.DDPG_single(num_ensemble, print_cvs)
 else:
   enable_ensemble = 1
   online_run = rl.DDPG_ensemble(num_ensemble, dbg_weightstderror, print_cvs)
