@@ -10,6 +10,9 @@
 import os
 import sys
 import time
+import random
+from datetime import datetime
+
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 dbg_weightstderror = 0
 
@@ -28,8 +31,7 @@ import base.Environments as be
 import base.DDPGNetworkConfig as ddpg_cfg
 import DDPGNetworkEnsemble
 import base.Online_run as rl
-from random import random
-from random import seed
+
 
 import DDPGNetwork, DDPGNetworkNode, ReplayMemory
 from CriticAggregation import WeightedByTDError
@@ -68,7 +70,7 @@ def run_multi_ddpg():
 
     #TODO selecionar a politica alternadamente
     itmode = int(iteration_mode)
-    num_rnd = random()
+    num_rnd = random.random()
     if itmode == ddpg_cfg.IterationMode.alternately_persistent:
       policy_rnd = (ep % num_ensemble)
     elif itmode == ddpg_cfg.IterationMode.random:
@@ -411,7 +413,7 @@ episodes = int(cfg_agt['steps']/steps_p_ep)
 replay_steps = cfg_agt['replay_steps']
 batch_size = cfg_agt['batch_size']
 
-seed(1234)
+random.seed(datetime.now())
 
 # Run episodes
 
