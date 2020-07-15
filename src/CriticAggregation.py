@@ -159,7 +159,6 @@ class WeightedByFixedHalf(CriticAggregation):
 
 
     def buildLayer(self):
-        print('CriticAggregation::WeightedByFixedHalf')
         self.q_critic = tf.reduce_sum((self._q_in * self.fixed))
 
     def train(self, td, addrw):

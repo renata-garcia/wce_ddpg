@@ -1,6 +1,6 @@
 from keras.layers import Dense, Concatenate
 import tensorflow as tf
-import base.DDPGNetworkConfig as ddpg_cfg
+import base.config as ddpg_cfg
 
 #rm DDPGNetwork.py; touch DDPGNetwork.py; chmod 755 DDPGNetwork.py; nano DDPGNetwork.py;
 """DDPG actor-critic network with two hidden layers"""

@@ -1,6 +1,6 @@
 from keras.layers import Dense, Concatenate
 import tensorflow as tf
-import base.DDPGNetworkConfig as ddpg_cfg
+import base.config as ddpg_cfg
 
 #rm DDPGNetworkNode.py touch DDPGNetworkNode.py; chmod 755 DDPGNetworkNode.py; nano DDPGNetworkNode.py
 
