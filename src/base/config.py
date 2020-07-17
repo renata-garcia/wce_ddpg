@@ -116,6 +116,7 @@ class IterationMode:
   online = 3
   random_weighted_by_return = 4
   policy_persistent_random_weighted = 5
+  policy_persistent_random_weighted_by_return = 6
 
 
 class DDPGNetworkConfig:

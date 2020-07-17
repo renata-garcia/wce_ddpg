@@ -85,7 +85,7 @@ def run_multi_ddpg():
                    break
         elif itmode == IterationMode.online:
             online_iteration_mode = 1
-        elif itmode == IterationMode.random_weighted_by_return: #policy persistent random weighted by return
+        elif (itmode == IterationMode.random_weighted_by_return) or (itmode == IterationMode.policy_persistent_random_weighted_by_return): #policy persistent random weighted by return
             chosen_arrow = num_rnd
             sum_w_pol = 0
             policy_chosen = 0
@@ -137,8 +137,6 @@ def run_multi_ddpg():
             # Choose action
 
             tmp_ensemble = getattr(getattr(online_run, "_agent"), "_ensemble")
-            tmp_value_func = getattr(online_run, "_value_function")
-            # if test or online_iteration_mode:
             if test:
                 action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, act_acum)[0]
             elif online_iteration_mode:
@@ -146,7 +144,7 @@ def run_multi_ddpg():
                     action = online_run.get_policy_action(tmp_ensemble[int(random.random() * wce_num_ensemble)], sin, [observation])
                 else:
                    action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, act_acum)[0]
-            elif itmode == IterationMode.policy_persistent_random_weighted:
+            elif (itmode == IterationMode.policy_persistent_random_weighted) or (itmode == IterationMode.policy_persistent_random_weighted_by_return):
                 if (random.random() < 0.50): #rnd_not_policy_persistent_random_weighted
                     action = online_run.get_policy_action(tmp_ensemble[policy_chosen], sin, [observation])
                 else:
