@@ -69,6 +69,10 @@ def run_multi_ddpg():
 
         itmode = int(iteration_mode)
         num_rnd = random.random()
+        if random.random() > 0.5:
+            online_iteration_and_random_weighted_mode = 1
+        else:
+            online_iteration_and_random_weighted_mode = 0
         if itmode == IterationMode.alternately_persistent:
             policy_chosen = (ep % wce_num_ensemble)
         elif itmode == IterationMode.random:
@@ -101,21 +105,24 @@ def run_multi_ddpg():
             print("wce_ddpg.py::iteration_mode::", iteration_mode)
             exit(-1)
 
-        # print("rw_weights")
-        # print(rw_weights)
-        # print("addrw_acum")
-        # print(addrw_acum)
-        if (itmode != IterationMode.online):
-            addrw_acum[policy_chosen] = addrw_acum[policy_chosen]*0.1 + 0.9*(episode_reward/steps_count)
+        if itmode != IterationMode.online:
+            addrw_acum[policy_chosen] = addrw_acum[policy_chosen]*0.9 + 0.1*(episode_reward/steps_count)
+            temperature = 1000
             if ep%wce_num_ensemble == 0 and (not isObservationTime(memory.size())):
-                tmp_min = min(addrw_acum)
-                abs_tmp_min_x_2 = abs(tmp_min*2)
-                addrw_acum_abs = addrw_acum + abs_tmp_min_x_2
-                addrw_sum = np.sum(abs(addrw_acum_abs))
-                for ii in range(wce_num_ensemble):
-                     rw_weights[ii] = addrw_acum_abs[ii]/addrw_sum
-        # print("addrw_acum[0]: %0.1f, addrw_acum[1]: %0.1f, (episode_reward/steps_count): %0.2f, rw_weights[0]: %0.2f, rw_weights[1]: %0.2f\n" % (
-        # addrw_acum[0],  addrw_acum[1], (episode_reward/steps_count), rw_weights[0], rw_weights[1]))
+                tmp_max = np.max(addrw_acum)
+                addrw_acum_abs = addrw_acum + np.min(addrw_acum)
+                e_x = np.exp(addrw_acum_abs)/temperature
+                rw_weights = e_x / e_x.sum()
+                print(rw_weights)
+
+                # tmp_min = min(addrw_acum)
+                # abs_tmp_min_x_2 = abs(tmp_min*2)
+                # #TODO use softmax calculating reward minus minumum
+                # addrw_acum_abs = addrw_acum + abs_tmp_min_x_2
+                # addrw_sum = np.sum(abs(addrw_acum_abs))
+                # #TODO test increasing valur by temperature (exp/temp)
+                # for ii in range(wce_num_ensemble):
+                #      rw_weights[ii] = addrw_acum_abs[ii]/addrw_sum
 
         steps_acum = steps_acum + steps_count
         steps_count = 0
@@ -144,8 +151,8 @@ def run_multi_ddpg():
                     action = online_run.get_policy_action(tmp_ensemble[int(random.random() * wce_num_ensemble)], sin, [observation])
                 else:
                    action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, act_acum)[0]
-            elif (itmode == IterationMode.policy_persistent_random_weighted) or (itmode == IterationMode.policy_persistent_random_weighted_by_return):
-                if (random.random() < 0.50): #rnd_not_policy_persistent_random_weighted
+            elif (itmode == IterationMode.policy_persistent_random_weighted) or (itmode == IterationMode.policy_persistent_random_weighted_by_return): #TODO choose by steps (not persistent)
+                if (online_iteration_and_random_weighted_mode): #rnd_not_policy_persistent_random_weighted # TODO decide which policy to use for all steps, in episode
                     action = online_run.get_policy_action(tmp_ensemble[policy_chosen], sin, [observation])
                 else:
                    action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, act_acum)[0]
