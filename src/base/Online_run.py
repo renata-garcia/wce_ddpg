@@ -48,9 +48,12 @@ class DDPG_ensemble(Online_run):
         self._print_cvs = print_cvs
         print("class DDPG_ensemble")
 
-    def get_action(self, ensemble, sin, obs, q_res, act_acum):
+    def get_actions(self, ensemble, sin, obs):
         act_nodes = [e[0].a_out for e in ensemble]
         acts =  self._session.run(act_nodes, {sin: obs})
+        return acts
+
+    def get_action(self, ensemble, sin, obs, q_res, acts, act_acum):
 
         qss = []
         for ine in range(self._num_ensemble):

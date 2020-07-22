@@ -37,8 +37,13 @@ from base.config import IterationMode
 from base.config import ConfigYaml
 from base.config import  WCE_config
 
+
 def isObservationTime(memory_size):
     return memory_size < 1000
+
+
+def isInitialOfEpisode(steps_count):
+    return steps_count == 1
 
 
 def get_action_rnd_policy(sess, network, sin, obs):
@@ -56,6 +61,7 @@ def run_multi_ddpg():
     td_mounted = np.zeros((wce_num_ensemble))
     target_mounted = np.zeros((wce_num_ensemble))
     q_mounted = np.zeros((wce_num_ensemble))
+    acts_diff_std = []
 
     steps_acum = 0
     steps_count = 1 #first init unit, reseted before use
@@ -113,8 +119,7 @@ def run_multi_ddpg():
                 addrw_acum_abs = addrw_acum + np.min(addrw_acum)
                 e_x = np.exp(addrw_acum_abs)/temperature
                 rw_weights = e_x / e_x.sum()
-                print(rw_weights)
-
+                # print(rw_weights)
                 # tmp_min = min(addrw_acum)
                 # abs_tmp_min_x_2 = abs(tmp_min*2)
                 # #TODO use softmax calculating reward minus minumum
@@ -128,10 +133,7 @@ def run_multi_ddpg():
         steps_count = 0
         episode_reward = 0
 
-        if (ep % 10 == 0):
-            test = 1
-        else:
-           test = 0
+        test = ((ep % 10) == 0)
 
         observation = env.set_reset(test)
         observation = env.get_obs_trig(observation)
@@ -143,21 +145,35 @@ def run_multi_ddpg():
             steps_count = steps_count + 1
             # Choose action
 
+            acts = []
             tmp_ensemble = getattr(getattr(online_run, "_agent"), "_ensemble")
             if test:
-                action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, act_acum)[0]
+                acts = online_run.get_actions(tmp_ensemble, sin, [observation])
+                action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum)[0]
             elif online_iteration_mode:
                 if (random.random() < 0.05): #rnd_epsilon_action
                     action = online_run.get_policy_action(tmp_ensemble[int(random.random() * wce_num_ensemble)], sin, [observation])
                 else:
-                   action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, act_acum)[0]
+                    acts = online_run.get_actions(tmp_ensemble, sin, [observation])
+                    action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum)[0]
             elif (itmode == IterationMode.policy_persistent_random_weighted) or (itmode == IterationMode.policy_persistent_random_weighted_by_return): #TODO choose by steps (not persistent)
                 if (online_iteration_and_random_weighted_mode): #rnd_not_policy_persistent_random_weighted # TODO decide which policy to use for all steps, in episode
                     action = online_run.get_policy_action(tmp_ensemble[policy_chosen], sin, [observation])
                 else:
-                   action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, act_acum)[0]
+                    acts = online_run.get_actions(tmp_ensemble, sin, [observation])
+                    action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum)[0]
             else:
                 action = online_run.get_policy_action(tmp_ensemble[policy_chosen], sin, [observation])
+
+            mean_acts = np.mean(acts)
+            dist_acts = acts - mean_acts
+
+            if isInitialOfEpisode(steps_count):
+                dist_acts_mounted = abs(dist_acts)
+                acts_diff_std = abs(np.sum(dist_acts)/wce_num_ensemble)
+            else:
+                dist_acts_mounted = dist_acts_mounted + abs(dist_acts)
+                acts_diff_std = acts_diff_std + abs(np.sum(dist_acts)/wce_num_ensemble)
 
             if not test:
                 #TODO read sigma for half cheetah scale=[1]
@@ -224,8 +240,12 @@ def run_multi_ddpg():
                         log = log + "           0.0"
 
                 for iaa in range(wce_num_ensemble):
-                    log = log + "           %0.01f" \
-                          % (act_acum[iaa])
+                    log = log + "           %0.01f" % (act_acum[iaa])
+
+                for ida in range(wce_num_ensemble):
+                    log = log + "           %0.01f" % (dist_acts_mounted[ida])
+
+                log = log + "           %0.08f" % acts_diff_std
 
                 file_output = open("../" + file_name, "a")
                 file_output.write(log + "\n")
