@@ -5,7 +5,7 @@ import base.config as ddpg_cfg
 #rm DDPGNetworkNode.py touch DDPGNetworkNode.py; chmod 755 DDPGNetworkNode.py; nano DDPGNetworkNode.py
 
 class DDPGNetworkNode(ddpg_cfg.DDPGNetworkConfig):
-  def __init__(self, sess, sin, qtarget, act, a_max, config):
+  def __init__(self, sess, sin, qtarget, act, a_max, hasTargetActionInfo, config):
     self.session = sess
     self.s_in = sin
     self.q_target = qtarget
@@ -26,7 +26,10 @@ class DDPGNetworkNode(ddpg_cfg.DDPGNetworkConfig):
     theta = tf.trainable_variables()[prev_vars:]
 
     # Critic network
-    self.a_in = tf.placeholder_with_default(tf.stop_gradient(self.a_out), shape=(None, act), name='a_in')
+    if hasTargetActionInfo:
+      self.a_in = tf.placeholder(tf.float32, shape=(None, act), name='a_in_target')
+    else:
+      self.a_in = tf.placeholder_with_default(tf.stop_gradient(self.a_out), shape=(None, act), name='a_in')
     hq1 = Dense(self.layer1_size, activation=self.act1[1:-1], name='h_critic1')(self.s_in)
     hc1 = Concatenate()([hq1, self.a_in])
     hq2 = Dense(self.layer2_size, activation=self.act1[1:-1], name='h_critic2')(hc1)

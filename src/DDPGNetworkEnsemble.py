@@ -15,10 +15,11 @@ from CriticAggregation import WeightedByFixedOne
 #rm DDPGNetworkNode.py touch DDPGNetworkNode.py; chmod 755 DDPGNetworkNode.py; nano DDPGNetworkNode.py
 
 class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
-    def __init__(self, sess, sin, cfg_ens, action_space, num_ensemble, max_action):
+    def __init__(self, sess, sin, cfg_ens, action_space, num_ensemble, max_action, hasTargetActionInfo):
         self._session = sess
         self._sin = sin
         self._num_ensemble = num_ensemble
+        self._hasTargetActionInfo = hasTargetActionInfo
         self._ensemble = []
         self._qtarget = []
         for ii in range(self._num_ensemble):
@@ -26,10 +27,10 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
 
         for ne in range(num_ensemble):
             prev_vars = len(tf.trainable_variables())
-            network = node.DDPGNetworkNode(self._session, sin, self._qtarget[ne], action_space, max_action,
+            network = node.DDPGNetworkNode(self._session, sin, self._qtarget[ne], action_space, max_action, self._hasTargetActionInfo,
                                                       cfg_ens[ne]['config_ddpg'])
-            target_network = node.DDPGNetworkNode(self._session, sin, self._qtarget[ne], action_space,
-                                                       max_action, cfg_ens[ne]['config_ddpg'])
+            target_network = node.DDPGNetworkNode(self._session, sin, self._qtarget[ne], action_space, max_action, self._hasTargetActionInfo,
+                                                  cfg_ens[ne]['config_ddpg'])
             vars = tf.trainable_variables()[prev_vars:]
             tau = cfg_ens[ne]['tau']
             update_ops = [vars[ix + len(vars) // 2].assign_add(tau * (var.value() - vars[ix + len(vars) // 2].value())) for
@@ -64,7 +65,19 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
         for ii in range(self._num_ensemble):
            returns.append(self._ensemble[ii][main_target].q)
 
-        return self._session.run(returns, {self._sin: obs})
+
+        if self._hasTargetActionInfo:
+            returns_a_out = []
+            for ii in range(self._num_ensemble):
+                returns_a_out.append(self._ensemble[ii][1].a_out)
+            a_outs = self._session.run(returns_a_out, {self._sin: obs})
+
+            feed_dict = {self._sin :  obs}
+            for ii in range(self._num_ensemble):
+                feed_dict[self._ensemble[ii][main_target].a_in] = a_outs[ii]
+            return self._session.run(returns, feed_dict)
+        else:
+            return self._session.run(returns, {self._sin: obs})
 
 
     def get_value_function(self, typeCriticAggregation):
@@ -105,14 +118,21 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
 
 
         # Train actor
-        feed_dict = {self._sin: obs}
-
         returns = []
         for ii in range(self._num_ensemble):
             returns.append(self._ensemble[ii][0].a_update)
 
-        self._session.run(returns, feed_dict)
+        feed_dict = {self._sin: obs}
+        if self._hasTargetActionInfo:
+            returns_a_out = []
+            for ii in range(self._num_ensemble):
+                returns_a_out.append(self._ensemble[ii][1].a_out)
+            a_outs = self._session.run(returns_a_out, {self._sin: obs})
 
+            for ii in range(self._num_ensemble):
+                feed_dict[self._ensemble[ii][0].a_in] = a_outs[ii]
+
+        self._session.run(returns, feed_dict)
 
 
 class DDPGNetworkSingle(ddpg_cfg.DDPGNetworkConfig):
