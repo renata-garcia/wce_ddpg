@@ -166,7 +166,7 @@ def run_multi_ddpg():
                 action = online_run.get_policy_action(tmp_ensemble[policy_chosen], sin, [observation])
 
             if len(acts) == 0:
-                mean_acts = np.zeros(wce_num_ensemble)
+                mean_acts = np.zeros(0)
             else:
                 mean_acts = np.mean(acts)
             dist_acts = acts - mean_acts
@@ -308,6 +308,7 @@ if getattr(cfg_yaml, "_enable_ensemble"):
         typeCriticAggregation_ = typeCriticAggregation[6:]
     else:
         hasTargetActionInfo = 0
+        typeCriticAggregation_ = typeCriticAggregation
 
     setattr(online_run, "_agent", DDPGNetworkEnsemble(session, sin, getattr(cfg_yaml, "_cfg_ens"),
                                                                       env._env.action_space.shape[0],
