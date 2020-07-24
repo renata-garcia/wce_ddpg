@@ -302,7 +302,7 @@ else:
 if getattr(cfg_yaml, "_enable_ensemble"):
     if "Target" in typeCriticAggregation:
         hasTargetActionInfo = 1
-        typeCriticAggregation = typeCriticAggregation[6:]
+        typeCriticAggregation_ = typeCriticAggregation[6:]
     else:
         hasTargetActionInfo = 0
 
@@ -311,7 +311,7 @@ if getattr(cfg_yaml, "_enable_ensemble"):
                                                                       wce_num_ensemble,
                                                                       max_action, hasTargetActionInfo))
     tmp = getattr(online_run, "_agent")
-    setattr(online_run, "_value_function", tmp.get_value_function(typeCriticAggregation))
+    setattr(online_run, "_value_function", tmp.get_value_function(typeCriticAggregation_))
 else:
     setattr(online_run, "_agent", DDPGNetworkSingle(session, sin, getattr(cfg_yaml, "_cfg_ens"),
                                                                           env._env.action_space.shape[0],
