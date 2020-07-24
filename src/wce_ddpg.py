@@ -165,7 +165,10 @@ def run_multi_ddpg():
             else:
                 action = online_run.get_policy_action(tmp_ensemble[policy_chosen], sin, [observation])
 
-            mean_acts = np.mean(acts)
+            if len(acts) == 0:
+                mean_acts = np.zeros(wce_num_ensemble)
+            else:
+                mean_acts = np.mean(acts)
             dist_acts = acts - mean_acts
 
             if isInitialOfEpisode(steps_count):
