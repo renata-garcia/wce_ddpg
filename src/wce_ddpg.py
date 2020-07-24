@@ -303,6 +303,8 @@ if getattr(cfg_yaml, "_enable_ensemble"):
     if "Target" in typeCriticAggregation:
         hasTargetActionInfo = 1
         typeCriticAggregation = typeCriticAggregation[6:]
+    else:
+        hasTargetActionInfo = 0
 
     setattr(online_run, "_agent", DDPGNetworkEnsemble(session, sin, getattr(cfg_yaml, "_cfg_ens"),
                                                                       env._env.action_space.shape[0],
