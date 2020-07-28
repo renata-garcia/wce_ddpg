@@ -267,6 +267,7 @@ typeCriticAggregation = sys.argv[2]
 iteration_mode = sys.argv[3] #0=alternately_persistentç 1=randweightedç 2=online
 run_offset = sys.argv[4]
 print_cvs = int(sys.argv[5])
+adding_name = sys.argv[6]
 
 cfg_yaml = ConfigYaml(file_yaml)
 wce_config = WCE_config()
@@ -326,7 +327,7 @@ session.run(tf.global_variables_initializer())
 memory = ReplayMemory()
 
 #ext =  cfg['experiment']['run_offset'] + #TODO
-file_name = getattr(cfg_yaml, "_output") + typeCriticAggregation + "-" + iteration_mode + run_offset + ".txt"
+file_name = getattr(cfg_yaml, "_output") + typeCriticAggregation + "-" + iteration_mode + run_offset + "-" + adding_name + ".txt"
 file_output = open("../" + file_name, "w")
 file_output.close()
 
