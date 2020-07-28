@@ -27,9 +27,9 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
 
         for ne in range(num_ensemble):
             prev_vars = len(tf.trainable_variables())
-            network = node.DDPGNetworkNode(self._session, sin, self._qtarget[ne], action_space, max_action, self._hasTargetActionInfo,
+            network = node.DDPGNetworkNode(self._session, sin, self._qtarget[ne], action_space, max_action,
                                                       cfg_ens[ne]['config_ddpg'])
-            target_network = node.DDPGNetworkNode(self._session, sin, self._qtarget[ne], action_space, max_action, self._hasTargetActionInfo,
+            target_network = node.DDPGNetworkNode(self._session, sin, self._qtarget[ne], action_space, max_action,
                                                   cfg_ens[ne]['config_ddpg'])
             vars = tf.trainable_variables()[prev_vars:]
             tau = cfg_ens[ne]['tau']
@@ -41,8 +41,6 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
     def choose_aggregation(self, typeCriticAggregation, session, qs1, qin, td):
         if typeCriticAggregation == "Average":
             q_critic = WeightedByAverage(session, qs1, td, self._num_ensemble)
-        elif typeCriticAggregation == "TDErrorInvW":
-            q_critic = WeightedByTDErrorInvW(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDError":
             q_critic = WeightedByTDError(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "FixedByHalf":
@@ -59,22 +57,20 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
             exit(-1)
         return q_critic
 
+    #TODO actions = get_all_actions_target_network(nobs)
+    #TODO nextq = max(ensemble_q_values_target_network(nobs, actions))
+    #TODO target = r + gamma * nextq
 
-    def get_value(self, main_target, obs):
+    #TODO train_nextq_results = ddpgne.get_value(1, nobs)  # TODO use action ensemble
+    def get_value(self, main_target, obs, act=None):
         returns = []
         for ii in range(self._num_ensemble):
-           returns.append(self._ensemble[ii][main_target].q)
+            returns.append(self._ensemble[ii][main_target].q)
 
-
-        if self._hasTargetActionInfo:
-            returns_a_out = []
+        if act:
+            feed_dict = {self._sin: obs}
             for ii in range(self._num_ensemble):
-                returns_a_out.append(self._ensemble[ii][1].a_out)
-            a_outs = self._session.run(returns_a_out, {self._sin: obs})
-
-            feed_dict = {self._sin :  obs}
-            for ii in range(self._num_ensemble):
-                feed_dict[self._ensemble[ii][main_target].a_in] = a_outs[ii]
+                feed_dict[self._ensemble[ii][main_target].a_in] = act[ii] #TODO maybe passing one in time
             return self._session.run(returns, feed_dict)
         else:
             return self._session.run(returns, {self._sin: obs})
@@ -99,23 +95,13 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
         feed_dict = {self._sin :  obs}
         for j in range(self._num_ensemble):
             feed_dict[self._ensemble[j][0].a_in] = act
-            # print(act)
-            # print(act[0])
-            # print(len(act))
             feed_dict[self._ensemble[j][0].q_target] = q_target[j]
-            # print(len(q_target[j]))
 
         returns = []
         for ii in range(self._num_ensemble):
            returns.append(self._ensemble[ii][0].q_update)
 
-        # print("##########")
-        # print(returns)
-        # print(len(returns))
-        # print(feed_dict)
-        # print(len(feed_dict))
         self._session.run(returns, feed_dict)
-
 
         # Train actor
         returns = []
@@ -123,15 +109,6 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
             returns.append(self._ensemble[ii][0].a_update)
 
         feed_dict = {self._sin: obs}
-        if self._hasTargetActionInfo:
-            returns_a_out = []
-            for ii in range(self._num_ensemble):
-                returns_a_out.append(self._ensemble[ii][1].a_out)
-            a_outs = self._session.run(returns_a_out, {self._sin: obs})
-
-            for ii in range(self._num_ensemble):
-                feed_dict[self._ensemble[ii][0].a_in] = a_outs[ii]
-
         self._session.run(returns, feed_dict)
 
 

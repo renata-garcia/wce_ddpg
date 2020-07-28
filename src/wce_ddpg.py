@@ -13,7 +13,7 @@ import time
 import random
 from datetime import datetime
 
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 dbg_weightstderror = 0
 
 import tensorflow as tf
@@ -113,21 +113,11 @@ def run_multi_ddpg():
 
         if itmode != IterationMode.online:
             addrw_acum[policy_chosen] = addrw_acum[policy_chosen]*0.9 + 0.1*(episode_reward/steps_count)
-            temperature = 1000
+            temperature = 1 #TODO 0.1 1 10
             if ep%wce_num_ensemble == 0 and (not isObservationTime(memory.size())):
-                tmp_max = np.max(addrw_acum)
-                addrw_acum_abs = addrw_acum + np.min(addrw_acum)
-                e_x = np.exp(addrw_acum_abs)/temperature
+                addrw_acum_abs = addrw_acum - np.min(addrw_acum)
+                e_x = np.exp(addrw_acum_abs/temperature)
                 rw_weights = e_x / e_x.sum()
-                # print(rw_weights)
-                # tmp_min = min(addrw_acum)
-                # abs_tmp_min_x_2 = abs(tmp_min*2)
-                # #TODO use softmax calculating reward minus minumum
-                # addrw_acum_abs = addrw_acum + abs_tmp_min_x_2
-                # addrw_sum = np.sum(abs(addrw_acum_abs))
-                # #TODO test increasing valur by temperature (exp/temp)
-                # for ii in range(wce_num_ensemble):
-                #      rw_weights[ii] = addrw_acum_abs[ii]/addrw_sum
 
         steps_acum = steps_acum + steps_count
         steps_count = 0
@@ -170,20 +160,21 @@ def run_multi_ddpg():
             else:
                 mean_acts = np.mean(acts)
             dist_acts = acts - mean_acts
+            dist_acts_ens = acts - action #TODO printing
 
             if isInitialOfEpisode(steps_count):
                 dist_acts_mounted = abs(dist_acts)
                 acts_diff_std = abs(np.sum(dist_acts)/wce_num_ensemble)
             else:
                 dist_acts_mounted = dist_acts_mounted + abs(dist_acts)
-                acts_diff_std = acts_diff_std + abs(np.sum(dist_acts)/wce_num_ensemble)
+                acts_diff_std = acts_diff_std + np.sum(abs(dist_acts)/wce_num_ensemble)
 
             if not test:
                 #TODO read sigma for half cheetah scale=[1]
                 noise = 0.85 * noise + np.random.normal(scale=[1])
                 action += noise
 
-          # Take step
+            # Take step
             prev_obs = observation
             observation, reward, done, info = env._env.step(action)
             observation = env.get_obs_trig(observation)
@@ -214,41 +205,41 @@ def run_multi_ddpg():
                 break
         if test:
             if ep > 1:
-                log = "           %d            %d            %0.1f"\
+                log = "%d\t%d\t%0.1f"\
                       % (ep, steps_acum, episode_reward)
 
                 for ine in range(wce_num_ensemble):
-                    log = log + "           %0.01f"\
+                    log = log + "\t%0.01f"\
                           % (weights_mounted[ine])
 
                 if weights_mounted[0] != 0:
                     td_mounted = [sum(x) for x in zip(*td_mounted)]
                     for ine in range(wce_num_ensemble):
-                         log = log + "           %0.01f"\
+                         log = log + "\t%0.01f"\
                                % (td_mounted[ine])
 
                     target_mounted_t = abs(target_mounted)
                     target_mounted_t = [sum(x) for x in zip(*target_mounted_t)]
                     for ine in range(wce_num_ensemble):
-                        log = log + "           %0.01f"\
+                        log = log + "\t%0.01f"\
                               % (target_mounted_t[ine])
 
                     q_mounted_t = abs(q_mounted)
                     q_mounted_t = [sum(x) for x in zip(*q_mounted_t)]
                     for ine in range(wce_num_ensemble):
-                        log = log + "           %0.01f"\
+                        log = log + "\t%0.01f"\
                               % (q_mounted_t[ine])
                 elif ep > 1:
                     for ine in range(3*wce_num_ensemble): #3 = td, target, q
-                        log = log + "           0.0"
+                        log = log + "\t0.0"
 
                 for iaa in range(wce_num_ensemble):
-                    log = log + "           %0.01f" % (act_acum[iaa])
+                    log = log + "\t%0.01f" % (act_acum[iaa])
 
                 for ida in range(wce_num_ensemble):
-                    log = log + "           %0.01f" % (dist_acts_mounted[ida])
+                    log = log + "\t%0.01f" % (dist_acts_mounted[ida])
 
-                log = log + "           %0.08f" % acts_diff_std
+                log = log + "\t%0.08f" % acts_diff_std
 
                 file_output = open("../" + file_name, "a")
                 file_output.write(log + "\n")
@@ -297,9 +288,9 @@ wce_num_ensemble = getattr(cfg_yaml, "_num_ensemble")
 
 print("# Set up DDPG Single or Ensemble")
 if wce_num_ensemble == 1:
-    online_run = rl.DDPG_single(session, wce_num_ensemble, print_cvs)
+    online_run = rl.DDPGSingle(session, wce_num_ensemble, print_cvs)
 else:
-    online_run = rl.DDPG_ensemble(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+    online_run = rl.DDPGEnsemble(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 
 
 if getattr(cfg_yaml, "_enable_ensemble"):
@@ -309,11 +300,11 @@ if getattr(cfg_yaml, "_enable_ensemble"):
     else:
         hasTargetActionInfo = 0
         typeCriticAggregation_ = typeCriticAggregation
-
     setattr(online_run, "_agent", DDPGNetworkEnsemble(session, sin, getattr(cfg_yaml, "_cfg_ens"),
                                                                       env._env.action_space.shape[0],
                                                                       wce_num_ensemble,
-                                                                      max_action, hasTargetActionInfo))
+                                                                      max_action,
+                                                                      hasTargetActionInfo))
     tmp = getattr(online_run, "_agent")
     setattr(online_run, "_value_function", tmp.get_value_function(typeCriticAggregation_))
 else:

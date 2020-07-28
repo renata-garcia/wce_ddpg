@@ -3,17 +3,17 @@
 import itertools
 import numpy as np
 
-class Online_run(): #TODO separe files and use design patterns
+class OnlineRun:
     def __init__(self):
         self._agent = 0
         self._value_function = 0
         print("class Online_run")
 
     def get_policy_action(self, network, sin, obs):
-        return self._session.run(network[0].a_out, {sin: obs})[0]
+        return self._session.run(network[0].a_out, {sin: obs})
 
-class DDPG_single(Online_run):
-    def __init__(self, sess, num_ensemble, dbg_weightstderror, print_cvs):
+class DDPGSingle(OnlineRun):
+    def __init__(self, sess, num_ensemble, print_cvs):
         self._session = sess
         self._num_ensemble = num_ensemble
         self._print_cvs = print_cvs
@@ -39,7 +39,8 @@ class DDPG_single(Online_run):
 
         ## END TRAIN ACTOR CRITIC
 
-class DDPG_ensemble(Online_run):
+class DDPGEnsemble(OnlineRun):
+
 
     def __init__(self, sess, num_ensemble, dbg_weightstderror, print_cvs):
         self._session = sess
@@ -48,19 +49,21 @@ class DDPG_ensemble(Online_run):
         self._print_cvs = print_cvs
         print("class DDPG_ensemble")
 
+
     def get_actions(self, ensemble, sin, obs):
         act_nodes = [e[0].a_out for e in ensemble]
         acts =  self._session.run(act_nodes, {sin: obs})
         return acts
 
-    def get_action(self, ensemble, sin, obs, q_res, acts, act_acum):
 
+    def get_action(self, ensemble, sin, obs, q_res, acts, act_acum):
         qss = []
         for ine in range(self._num_ensemble):
             feed_dict = {sin: obs}
             for j in range(self._num_ensemble):
                feed_dict[ensemble[j][0].a_in] = acts[ine]
             qss.append( self._session.run(q_res, feed_dict))
+
         biggest_v = qss[0]
         biggest_i = 0
         for k in range(self._num_ensemble - 1):
@@ -81,6 +84,11 @@ class DDPG_ensemble(Online_run):
         # Calculate Q value of next state
         train_q_results = ddpgne.get_value(0, obs)
         train_nextq_results = ddpgne.get_value(1, nobs)  # TODO TD = TARGET - Q_TARGET
+        # train_q_results = ddpgne.get_value(0, obs, act)  #using minibatch action
+        # acts = self.get_actions(getattr(ddpgne, "_ensemble"), getattr(ddpgne, "_sin"), nobs) #ok
+        # action = self.get_action(getattr(ddpgne, "_ensemble"), getattr(ddpgne, "_sin"), nobs, q_critic.q_critic, acts, np.zeros(self._num_ensemble))
+        # train_nextq_results = ddpgne.get_value(1, nobs, action)  # get_all_actions_target_network(nobs)
+        # # nextq = max(ensemble_q_values_target_network(nobs, actions))
 
         # Calculate target using SARSA
         train_target_results = []
