@@ -20,7 +20,7 @@ class DDPGNetwork(ddpg_cfg.DDPGNetworkConfig):
     prev_vars = len(tf.trainable_variables())
 
     # Actor network
-    self.s_in = tf.placeholder(tf.float32, shape=(None, obs), name='s_in')
+    # self.s_in = tf.placeholder(tf.float32, shape=(None, obs), name='s_in')
     ha1 = Dense(self.layer1_size, activation=self.act1[1:-1], name='h_actor1')(self.s_in)
     ha2 = Dense(self.layer2_size, activation=self.act1[1:-1], name='h_actor2')(ha1)
     self.a_out = a_max * Dense(act, activation='tanh', name='a_out')(ha2)
@@ -39,20 +39,20 @@ class DDPGNetwork(ddpg_cfg.DDPGNetworkConfig):
     self.a_update = tf.train.AdamOptimizer(self._lractor).apply_gradients(zip(dq_dtheta, theta), name='a_update')
 
     # Critic network update
-    self.q_target = tf.placeholder(tf.float32, shape=(None, 1), name='target')
+    # self.q_target = tf.placeholder(tf.float32, shape=(None, 1), name='target')
     q_loss = tf.losses.mean_squared_error(self.q_target, self.q)
     self.q_update = tf.train.AdamOptimizer(self._lrcritic).minimize(q_loss, name='q_update')
 
-  def get_value(self, obs, act=None):
-    if act:
-      return self.session.run(self.q, {self.s_in: obs, self.a_in: act})
-    else:
-      return self.session.run(self.q, {self.s_in: obs})
-
-  def train(self, obs, act, q_target):
-    # Train critic
-    self.session.run(self.q_update, {self.s_in: obs, self.a_in: act, self.q_target: q_target})
-
-    # Train actor
-    self.session.run(self.a_update, {self.s_in: obs})
+  # def get_value(self, obs, act=None):
+  #   if act:
+  #     return self.session.run(self.q, {self.s_in: obs, self.a_in: act})
+  #   else:
+  #     return self.session.run(self.q, {self.s_in: obs})
+  #
+  # def train(self, obs, act, q_target):
+  #   # Train critic
+  #   self.session.run(self.q_update, {self.s_in: obs, self.a_in: act, self.q_target: q_target})
+  #
+  #   # Train actor
+  #   self.session.run(self.a_update, {self.s_in: obs})
 

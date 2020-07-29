@@ -28,7 +28,7 @@ import pandas as pd
 import base.Online_run as rl
 
 from DDPGNetworkEnsemble import  DDPGNetworkEnsemble
-from DDPGNetworkEnsemble import  DDPGNetworkSingle
+# from DDPGNetworkEnsemble import  DDPGNetworkSingle
 from DDPGNetwork import  DDPGNetwork
 from DDPGNetworkNode import  DDPGNetworkNode
 from ReplayMemory import  ReplayMemory
@@ -218,13 +218,13 @@ def run_multi_ddpg():
                          log = log + "\t%0.01f"\
                                % (td_mounted[ine])
 
-                    target_mounted_t = abs(target_mounted)
+                    target_mounted_t = np.abs(target_mounted)
                     target_mounted_t = [sum(x) for x in zip(*target_mounted_t)]
                     for ine in range(wce_num_ensemble):
                         log = log + "\t%0.01f"\
                               % (target_mounted_t[ine])
 
-                    q_mounted_t = abs(q_mounted)
+                    q_mounted_t = np.abs(q_mounted)
                     q_mounted_t = [sum(x) for x in zip(*q_mounted_t)]
                     for ine in range(wce_num_ensemble):
                         log = log + "\t%0.01f"\
@@ -288,33 +288,34 @@ session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 wce_num_ensemble = getattr(cfg_yaml, "_num_ensemble")
 
 print("# Set up DDPG Single or Ensemble")
-if wce_num_ensemble == 1:
-    online_run = rl.DDPGSingle(session, wce_num_ensemble, print_cvs)
-else:
-    online_run = rl.DDPGEnsemble(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+# if wce_num_ensemble == 1:
+#     online_run = rl.DDPGSingle(session, wce_num_ensemble, print_cvs)
+# else:
+online_run = rl.DDPGEnsemble(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 
 
-if getattr(cfg_yaml, "_enable_ensemble"):
-    if "Target" in typeCriticAggregation:
-        hasTargetActionInfo = 1
-        typeCriticAggregation_ = typeCriticAggregation[6:]
-    else:
-        hasTargetActionInfo = 0
-        typeCriticAggregation_ = typeCriticAggregation
-    setattr(online_run, "_agent", DDPGNetworkEnsemble(session, sin, getattr(cfg_yaml, "_cfg_ens"),
-                                                                      env._env.action_space.shape[0],
-                                                                      wce_num_ensemble,
-                                                                      max_action,
-                                                                      hasTargetActionInfo))
-    tmp = getattr(online_run, "_agent")
-    setattr(online_run, "_value_function", tmp.get_value_function(typeCriticAggregation_))
+if "Target" in typeCriticAggregation:
+    hasTargetActionInfo = 1
+    typeCriticAggregation_ = typeCriticAggregation[6:]
 else:
-    setattr(online_run, "_agent", DDPGNetworkSingle(session, sin, getattr(cfg_yaml, "_cfg_ens"),
-                                                                          env._env.action_space.shape[0],
-                                                                          wce_num_ensemble,
-                                                                          max_action))
-    tmp = getattr(online_run, "_agent")
-    setattr(online_run, "_value_function", tmp.get_value_function())
+    hasTargetActionInfo = 0
+    typeCriticAggregation_ = typeCriticAggregation
+# if getattr(cfg_yaml, "_enable_ensemble"):
+setattr(online_run, "_agent", DDPGNetworkEnsemble(session, sin, getattr(cfg_yaml, "_cfg_ens"),
+                                                                  env._env.action_space.shape[0],
+                                                                  wce_num_ensemble,
+                                                                  max_action,
+                                                                  hasTargetActionInfo))
+tmp = getattr(online_run, "_agent")
+setattr(online_run, "_value_function", tmp.get_value_function(typeCriticAggregation_))
+# else:
+#     setattr(online_run, "_agent", DDPGNetworkSingle(session, sin, getattr(cfg_yaml, "_cfg_ens"),
+#                                                                       env._env.action_space.shape[0],
+#                                                                       wce_num_ensemble,
+#                                                                       max_action,
+#                                                                       hasTargetActionInfo))
+#     tmp = getattr(online_run, "_agent")
+#     # setattr(online_run, "_value_function", tmp.get_value_function())
 
 
 # Create operations to slowly update target network
@@ -327,7 +328,8 @@ session.run(tf.global_variables_initializer())
 memory = ReplayMemory()
 
 #ext =  cfg['experiment']['run_offset'] + #TODO
-file_name = getattr(cfg_yaml, "_output") + typeCriticAggregation + "-" + iteration_mode + run_offset + "-" + adding_name + ".txt"
+file_name = getattr(cfg_yaml, "_output") + typeCriticAggregation + "-" + iteration_mode + run_offset + adding_name[1:] + ".txt"
+print(file_name)
 file_output = open("../" + file_name, "w")
 file_output.close()
 

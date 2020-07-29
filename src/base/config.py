@@ -14,8 +14,11 @@ class ConfigYaml:
         if self._cfg['experiment']['runs'] > 1:
             print("Experiment/runs > 1 will not save outfile file in correct manner!!!")
             exit(-1)
-
-        self._num_ensemble = len(self._cfg['experiment']['agent']['policy']['policy'])
+        self._enable_ensemble = (len(self._cfg['experiment']['agent']['policy']) == 11)
+        if self._enable_ensemble:
+            self._num_ensemble = 1
+        else:
+            self._num_ensemble = len(self._cfg['experiment']['agent']['policy']['policy'])
         self.read_file()
         self._replay_steps = self._cfg['experiment']['agent']['replay_steps']
         self._batch_size = self._cfg['experiment']['agent']['batch_size']
@@ -23,15 +26,10 @@ class ConfigYaml:
         self._run_offset = self._cfg['experiment']['run_offset']
         self._output = self._cfg['experiment']['output']
 
-        if (self._num_ensemble > 1):
-            self._enable_ensemble = 1
-        else:
-            self._enable_ensemble = 0
-
 
     def read_file(self):
-        for x in self._cfg['experiment']['agent']['policy']['policy']:
-            #TODO
+        if self._enable_ensemble:
+            x = self._cfg['experiment']['agent']['policy']
             str = x['representation']['file'].split()
             tmp = {'lr_actor': float(x['representation']['file'].split()[3]),
                    'lr_critic': float(x['representation']['file'].split()[4]),
@@ -43,17 +41,40 @@ class ConfigYaml:
                    'interval': float(x['representation']['interval']),
                    }
             tmp['config_ddpg'] = DDPGNetworkConfig(tmp['lr_actor'], tmp['lr_critic'], tmp['act1'], tmp['act2'],
-                                                            tmp['layer1'], tmp['layer2'], tmp['tau'], tmp['interval'])
+                                                   tmp['layer1'], tmp['layer2'], tmp['tau'], tmp['interval'])
             self._cfg_ens.append(tmp)
-
-        ii = 0
-        for x in self._cfg['experiment']['agent']['predictor']['predictor']:
-            tmp = self._cfg_ens[ii]
-            ii = ii + 1
+            x = self._cfg['experiment']['agent']['predictor']
+            tmp = self._cfg_ens[0]
             tmp['gamma'] = x['gamma']
             tmp['reward_scale'] = x['reward_scale']
             tmp['config_ddpg'].setGamma(tmp['gamma'])
             tmp['config_ddpg'].setRWScale(tmp['reward_scale'])
+        else:
+            policy = self._cfg['experiment']['agent']['policy']['policy']
+            for x in policy:
+                #TODO
+                str = x['representation']['file'].split()
+                tmp = {'lr_actor': float(x['representation']['file'].split()[3]),
+                       'lr_critic': float(x['representation']['file'].split()[4]),
+                       'act1': x['representation']['file'].split()[5],
+                       'act2': x['representation']['file'].split()[6],
+                       'layer1': int(x['representation']['file'].split()[7]),
+                       'layer2': int(x['representation']['file'].split()[8]),
+                       'tau': float(x['representation']['tau']),
+                       'interval': float(x['representation']['interval']),
+                       }
+                tmp['config_ddpg'] = DDPGNetworkConfig(tmp['lr_actor'], tmp['lr_critic'], tmp['act1'], tmp['act2'],
+                                                                tmp['layer1'], tmp['layer2'], tmp['tau'], tmp['interval'])
+                self._cfg_ens.append(tmp)
+
+            ii = 0
+            for x in self._cfg['experiment']['agent']['predictor']['predictor']:
+                tmp = self._cfg_ens[ii]
+                ii = ii + 1
+                tmp['gamma'] = x['gamma']
+                tmp['reward_scale'] = x['reward_scale']
+                tmp['config_ddpg'].setGamma(tmp['gamma'])
+                tmp['config_ddpg'].setRWScale(tmp['reward_scale'])
 
 
 class  WCE_config:

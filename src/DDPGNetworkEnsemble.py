@@ -2,13 +2,11 @@ from keras.layers import Dense, Concatenate
 import tensorflow as tf
 import base.config as ddpg_cfg
 import DDPGNetworkNode as node
+from DDPGNetwork import DDPGNetwork
+from DDPGNetworkNode import DDPGNetworkNode
 
 from CriticAggregation import WeightedByTDError
 from CriticAggregation import WeightedByAverage
-from CriticAggregation import WeightedByTDErrorInvW
-from CriticAggregation import WeightedByTDErrorAddingReward #TODO
-from CriticAggregation import WeightedByTDErrorAndReward #TODO
-from CriticAggregation import WeightedByAddingReward #TODO
 from CriticAggregation import WeightedByFixedHalf
 from CriticAggregation import WeightedByFixedOne
 
@@ -114,7 +112,7 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
 
 class DDPGNetworkSingle(ddpg_cfg.DDPGNetworkConfig):
     #TODO not finished
-    def __init__(self, sess, sin, cfg_ens, action_space, num_ensemble, max_action):
+    def __init__(self, sess, sin, cfg_ens, action_space, num_ensemble, max_action, hasTargetActionInfo):
         self._session = sess
         self._sin = sin
         self._num_ensemble = num_ensemble
@@ -125,8 +123,10 @@ class DDPGNetworkSingle(ddpg_cfg.DDPGNetworkConfig):
 
         for ne in range(num_ensemble):
             prev_vars = len(tf.trainable_variables())
-            network = DDPGNetwork(session, env._env.observation_space.shape[0]+1, action_space, max_action, cfg_ens[0]['config_ddpg'])
-            target_network = DDPGNetwork(session, env._env.observation_space.shape[0]+1, action_space, max_action, cfg_ens[0]['config_ddpg'])
+            network = DDPGNetworkNode(self._session, sin, self._qtarget[ne], action_space, max_action,
+                                      cfg_ens[ne]['config_ddpg'])
+            target_network = DDPGNetworkNode(self._session, sin, self._qtarget[ne], action_space, max_action,
+                                             cfg_ens[ne]['config_ddpg'])
             vars = tf.trainable_variables()[prev_vars:]
             tau = cfg_ens[ne]['tau']
             update_ops = [vars[ix + len(vars) // 2].assign_add(tau * (var.value() - vars[ix + len(vars) // 2].value()))
@@ -134,16 +134,11 @@ class DDPGNetworkSingle(ddpg_cfg.DDPGNetworkConfig):
             self._ensemble.append((network, target_network, update_ops))
 
 
-    def get_value(self, main_target, obs):
-        returns = []
-        # for ii in range(self._num_ensemble):
-        #    returns.append(self._ensemble[ii][main_target].q)
-        #
-        # return self._session.run(returns, {self._sin: obs})
-
-
-    def get_value_function(self):
-        return getattr(network, "q")
+    def get_value(self, main_target, obs, act=None):
+        if act:
+            return self._session.run(self._ensemble[0][main_target].q, {self._sin: obs, self._ensemble[0][main_target].a_in: act})
+        else:
+            return self._session.run(self._ensemble[0][main_target].q, {self._sin: obs})
 
 
     def train(self, obs, act, q_target):
