@@ -160,7 +160,7 @@ def run_multi_ddpg():
             else:
                 mean_acts = np.mean(acts)
             dist_acts = acts - mean_acts
-            dist_acts_ens = acts - action #TODO printing
+            # dist_acts_ens = acts - action #TODO printing
 
             if isInitialOfEpisode(steps_count):
                 dist_acts_mounted = abs(dist_acts)
