@@ -159,15 +159,15 @@ def run_multi_ddpg():
                 mean_acts = np.zeros(0)
             else:
                 mean_acts = np.mean(acts)
-            dist_acts = acts - mean_acts
+            # dist_acts = acts[0] - mean_acts
             # dist_acts_ens = acts - action #TODO printing
 
-            if isInitialOfEpisode(steps_count):
-                dist_acts_mounted = abs(dist_acts)
-                acts_diff_std = abs(np.sum(dist_acts)/wce_num_ensemble)
-            else:
-                dist_acts_mounted = dist_acts_mounted + abs(dist_acts)
-                acts_diff_std = acts_diff_std + np.sum(abs(dist_acts)/wce_num_ensemble)
+            # if isInitialOfEpisode(steps_count):
+            #     dist_acts_mounted = abs(dist_acts)
+            #     acts_diff_std = abs(np.sum(dist_acts)/wce_num_ensemble)
+            # else:
+            #     dist_acts_mounted = dist_acts_mounted + abs(dist_acts)
+            #     acts_diff_std = acts_diff_std + np.sum(abs(dist_acts)/wce_num_ensemble)
 
             if not test:
                 #TODO read sigma for half cheetah scale=[1]
@@ -236,10 +236,10 @@ def run_multi_ddpg():
                 for iaa in range(wce_num_ensemble):
                     log = log + "\t%0.01f" % (act_acum[iaa])
 
-                for ida in range(wce_num_ensemble):
-                    log = log + "\t%0.01f" % (dist_acts_mounted[ida])
+                # for ida in range(wce_num_ensemble):
+                #     log = log + "\t%0.01f" % (dist_acts_mounted[ida])
 
-                log = log + "\t%0.08f" % acts_diff_std
+                # log = log + "\t%0.08f" % acts_diff_std
 
                 file_output = open("../" + file_name, "a")
                 file_output.write(log + "\n")
