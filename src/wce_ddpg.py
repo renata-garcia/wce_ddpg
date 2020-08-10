@@ -28,7 +28,6 @@ import pandas as pd
 import base.Online_run as rl
 
 from DDPGNetworkEnsemble import  DDPGNetworkEnsemble
-# from DDPGNetworkEnsemble import  DDPGNetworkSingle
 from DDPGNetwork import  DDPGNetwork
 from DDPGNetworkNode import  DDPGNetworkNode
 from ReplayMemory import  ReplayMemory
@@ -116,8 +115,8 @@ def run_multi_ddpg():
             temperature = 1 #TODO 0.1 1 10
             if ep%wce_num_ensemble == 0 and (not isObservationTime(memory.size())):
                 addrw_acum_abs = addrw_acum - np.min(addrw_acum)
-                e_x = np.exp(addrw_acum_abs/temperature)
-                rw_weights = e_x / e_x.sum()
+                e_x = np.exp(addrw_acum_abs/temperature) #TODO check error
+                rw_weights = e_x / e_x.sum() #TODO check error
 
         steps_acum = steps_acum + steps_count
         steps_count = 0
@@ -291,15 +290,16 @@ print("# Set up DDPG Single or Ensemble")
 # if wce_num_ensemble == 1:
 #     online_run = rl.DDPGSingle(session, wce_num_ensemble, print_cvs)
 # else:
-online_run = rl.DDPGEnsemble(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
-
 
 if "Target" in typeCriticAggregation:
     hasTargetActionInfo = 1
     typeCriticAggregation_ = typeCriticAggregation[6:]
+    online_run = rl.DDPGEnsembleTarget(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 else:
     hasTargetActionInfo = 0
     typeCriticAggregation_ = typeCriticAggregation
+    online_run = rl.DDPGEnsemble(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+
 # if getattr(cfg_yaml, "_enable_ensemble"):
 setattr(online_run, "_agent", DDPGNetworkEnsemble(session, sin, getattr(cfg_yaml, "_cfg_ens"),
                                                                   env._env.action_space.shape[0],

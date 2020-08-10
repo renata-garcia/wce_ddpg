@@ -59,16 +59,25 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
     #TODO nextq = max(ensemble_q_values_target_network(nobs, actions))
     #TODO target = r + gamma * nextq
 
+    #TODO Q = Q(s, a)
+    #TODO Q_Target_Treino = r + gamma *max_{a' \in ensemble_actions}Q(s', a')
+    #TODO Q_Target_TD_error = r + gamma *max_{a' \in ensemble_actions}Q(s', a')
+    #TODO TD_error = Q_target - Q
+
+    #TODO Q = Q(s, a)
+    #TODO Q_Target = r + gamma *max_{a' \in ensemble_actions}Q(s', a')
+    #TODO TD_error = Q_target - Q
+
     #TODO train_nextq_results = ddpgne.get_value(1, nobs)  # TODO use action ensemble
     def get_value(self, main_target, obs, act=None):
         returns = []
         for ii in range(self._num_ensemble):
             returns.append(self._ensemble[ii][main_target].q)
 
-        if act:
+        if not act is None:
             feed_dict = {self._sin: obs}
             for ii in range(self._num_ensemble):
-                feed_dict[self._ensemble[ii][main_target].a_in] = act[ii] #TODO maybe passing one in time
+                feed_dict[self._ensemble[ii][main_target].a_in] = act
             return self._session.run(returns, feed_dict)
         else:
             return self._session.run(returns, {self._sin: obs})
