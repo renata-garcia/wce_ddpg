@@ -292,31 +292,22 @@ print("# Set up DDPG Single or Ensemble")
 # else:
 
 if "Target" in typeCriticAggregation:
-    hasTargetActionInfo = 1
     typeCriticAggregation_ = typeCriticAggregation[6:]
     online_run = rl.DDPGEnsembleTarget(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+elif "TDTrgt" in typeCriticAggregation:
+    typeCriticAggregation_ = typeCriticAggregation[6:]
+    online_run = rl.DDPGEnsembleTDTrgt(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+
 else:
-    hasTargetActionInfo = 0
     typeCriticAggregation_ = typeCriticAggregation
     online_run = rl.DDPGEnsemble(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 
-# if getattr(cfg_yaml, "_enable_ensemble"):
 setattr(online_run, "_agent", DDPGNetworkEnsemble(session, sin, getattr(cfg_yaml, "_cfg_ens"),
                                                                   env._env.action_space.shape[0],
                                                                   wce_num_ensemble,
-                                                                  max_action,
-                                                                  hasTargetActionInfo))
+                                                                  max_action))
 tmp = getattr(online_run, "_agent")
 setattr(online_run, "_value_function", tmp.build_value_function(typeCriticAggregation_))
-# else:
-#     setattr(online_run, "_agent", DDPGNetworkSingle(session, sin, getattr(cfg_yaml, "_cfg_ens"),
-#                                                                       env._env.action_space.shape[0],
-#                                                                       wce_num_ensemble,
-#                                                                       max_action,
-#                                                                       hasTargetActionInfo))
-#     tmp = getattr(online_run, "_agent")
-#     # setattr(online_run, "_value_function", tmp.get_value_function())
-
 
 # Create operations to slowly update target network
 print("# Initialize weights")

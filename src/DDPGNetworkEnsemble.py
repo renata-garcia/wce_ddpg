@@ -16,11 +16,10 @@ from CriticAggregation import WeightedByFixedOne
 #rm DDPGNetworkNode.py touch DDPGNetworkNode.py; chmod 755 DDPGNetworkNode.py; nano DDPGNetworkNode.py
 
 class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
-    def __init__(self, sess, sin, cfg_ens, action_space, num_ensemble, max_action, hasTargetActionInfo):
+    def __init__(self, sess, sin, cfg_ens, action_space, num_ensemble, max_action):
         self._session = sess
         self._sin = sin
         self._num_ensemble = num_ensemble
-        self._hasTargetActionInfo = hasTargetActionInfo
         self._ensemble = []
         self._qtarget = []
         for ii in range(self._num_ensemble):
