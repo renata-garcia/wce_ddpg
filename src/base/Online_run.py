@@ -195,26 +195,10 @@ class DDPGEnsembleTarget(OnlineRun):
         target_mounted = []
 
         # Calculate Q value of next state
-        act_arr = np.squeeze(np.expand_dims(act, axis=-1), axis=-1)
-        #train_q_results = ddpgne.get_value(0, obs, act_arr.tolist())  #using minibatch action
         train_q_results = ddpgne.get_value(0, obs, np.vstack(act))  # using minibatch action
-
-        # act_var = tf.Variable([ act[ii][0] for ii in range(len(act))])
-
-        # MyX = np.asarray(act)
-        # X = MyX.reshape(16, 1)
-        # X1 = [np.array(0.01*ii, dtype="float32") for ii in range(16)]
-        # X = np.expand_dims(X1, axis=1)
-        # train_q_results = ddpgne.get_value(0, obs, X)  # using minibatch action
         acts = self.get_actions(getattr(ddpgne, "_ensemble"), getattr(ddpgne, "_sin"), nobs) #ok
-        acts_arr = np.squeeze(np.expand_dims(acts, axis=-1), axis=-1)
-        action = self.get_action(getattr(ddpgne, "_ensemble"), getattr(ddpgne, "_sin"), nobs, q_critic.q_critic, acts_arr.tolist(), np.zeros(self._num_ensemble))
-        train_nextq_results = ddpgne.get_value(1, nobs, action)  # get_all_actions_target_network(nobs)
-        print(len(train_nextq_results))
-        print(train_nextq_results)
-
-        print("#########")
-        # # nextq = max(ensemble_q_values_target_network(nobs, actions))
+        action = self.get_action(getattr(ddpgne, "_ensemble"), getattr(ddpgne, "_sin"), nobs, q_critic.q_critic, acts, np.zeros(self._num_ensemble))
+        train_nextq_results = ddpgne.get_value(1, nobs, np.vstack(action))  # get_all_actions_target_network(nobs)
 
         # Calculate target using SARSA
         train_target_results = []
@@ -222,11 +206,6 @@ class DDPGEnsembleTarget(OnlineRun):
            train_target_results.append([rew[ii] * cfg_ens[ne]['reward_scale'] + cfg_ens[ne]['gamma'] * train_nextq_results[ne][ii] for ii in range(batch_size)])
 
         # Update critic using target and actor using gradient
-        # print("********************************")
-        # print(obs)
-        # print(act)
-        # print(len(act))
-        # print(train_target_results)
         ddpgne.train(obs, act, train_target_results)
 
         for ne in range(self._num_ensemble):

@@ -1,5 +1,8 @@
 from keras.layers import Dense, Concatenate
+
 import tensorflow as tf
+import numpy as np
+
 import base.config as ddpg_cfg
 import DDPGNetworkNode as node
 from DDPGNetwork import DDPGNetwork
@@ -83,11 +86,11 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
             return self._session.run(returns, {self._sin: obs})
 
 
-    def get_value_function(self, typeCriticAggregation):
+    def build_value_function(self, typeCriticAggregation):
         qs1 = []
         for i in range(self._num_ensemble):
             qs1.append(self._ensemble[i][0].q)
-        qin = tf.placeholder_with_default(tf.stop_gradient(tf.reshape(qs1, [1, self._num_ensemble])), shape=(None, self._num_ensemble), name='qin')
+        qin = tf.placeholder_with_default(tf.stop_gradient(qs1), shape=(None, self._num_ensemble, 1), name='qin')
         td = tf.placeholder(tf.float32, shape=(None, self._num_ensemble), name='td')
         q_critic = self.choose_aggregation(typeCriticAggregation, self._session, qs1, qin, td)
         q_critic.buildLayer()

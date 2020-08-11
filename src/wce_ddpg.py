@@ -13,7 +13,7 @@ import time
 import random
 from datetime import datetime
 
-os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 dbg_weightstderror = 0
 
 import tensorflow as tf
@@ -307,7 +307,7 @@ setattr(online_run, "_agent", DDPGNetworkEnsemble(session, sin, getattr(cfg_yaml
                                                                   max_action,
                                                                   hasTargetActionInfo))
 tmp = getattr(online_run, "_agent")
-setattr(online_run, "_value_function", tmp.get_value_function(typeCriticAggregation_))
+setattr(online_run, "_value_function", tmp.build_value_function(typeCriticAggregation_))
 # else:
 #     setattr(online_run, "_agent", DDPGNetworkSingle(session, sin, getattr(cfg_yaml, "_cfg_ens"),
 #                                                                       env._env.action_space.shape[0],
