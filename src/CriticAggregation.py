@@ -25,12 +25,10 @@ class WeightedByTDError(CriticAggregation):
 
         weights_raw = tf.get_variable(name='weights_raw', dtype=tf.float32,
                                            initializer=np.zeros(self._num_ensemble, np.float32))
-        # self.weights_raw = tf.transpose(self.weights_t, name='self.weights_t')
         self.weights = tf.nn.softmax(weights_raw)
         self.q_critic = tf.reduce_sum((self._q_in * self.weights))
 
-        # TODO testar retirando o treinamento, resultado deve ser igual a ter média
-        qs_loss = tf.reduce_sum(((self._td ** 2) * self.weights))
+        qs_loss = tf.reduce_sum( ((self._td ** 2) * self.weights) - 0*((-self.weights)*tf.math.log(self.weights)) ) #-entropy (trying to maximize entropy)
         self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(qs_loss, name='qs_update')
 
     def train(self, td, addrw):
