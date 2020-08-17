@@ -58,17 +58,18 @@ class DDPGEnsemble(OnlineRun):
         return acts
 
 
-    def get_action(self, ensemble, sin, obs, q_res, acts, act_acum, weights_res=None):
+    def get_action(self, ensemble, sin, obs, q_res, acts, act_acum): #, weights_res=None
         qss = []
         for ine in range(self._num_ensemble):
             feed_dict = {sin: obs}
             for j in range(self._num_ensemble):
-               feed_dict[ensemble[j][0].a_in] = acts[ine]
-            if weights_res is None:
-                a = self._session.run(q_res, feed_dict)
-            else:
-                a, b = self._session.run([q_res, weights_res], feed_dict)
-            qss.append(a)
+                feed_dict[ensemble[j][0].a_in] = acts[ine]
+            q_crtc = self._session.run(q_res, feed_dict)
+            # if weights_res is None:
+            #     a = self._session.run(q_res, feed_dict)
+            # else:
+            #     a, b = self._session.run([q_res, weights_res], feed_dict)
+            qss.append(q_crtc)
 
         biggest_v = qss[0]
         biggest_i = 0
@@ -77,10 +78,11 @@ class DDPGEnsemble(OnlineRun):
                 biggest_v = qss[k + 1]
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
-        if weights_res is None:
-            return acts[biggest_i]
-        else:
-            return acts[biggest_i], b
+        return acts[biggest_i]
+        # if weights_res is None:
+        #     return acts[biggest_i]
+        # else:
+        #     return acts[biggest_i], b
 
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
@@ -176,17 +178,18 @@ class DDPGEnsembleTarget(OnlineRun):
         return acts
 
 
-    def get_action(self, ensemble, sin, obs, q_res, acts, act_acum, weights_res=None):
+    def get_action(self, ensemble, sin, obs, q_res, acts, act_acum): #, weights_res=None
         qss = []
         for ine in range(self._num_ensemble):
             feed_dict = {sin: obs}
             for j in range(self._num_ensemble):
                 feed_dict[ensemble[j][0].a_in] = acts[ine]
-            if weights_res is None:
-                a = self._session.run(q_res, feed_dict)
-            else:
-                a, b = self._session.run([q_res, weights_res], feed_dict)
-            qss.append(a)
+            q_crtc = self._session.run(q_res, feed_dict)
+            # if weights_res is None:
+            #     a = self._session.run(q_res, feed_dict)
+            # else:
+            #     a, b = self._session.run([q_res, weights_res], feed_dict)
+            qss.append(q_crtc)
 
         biggest_v = qss[0]
         biggest_i = 0
@@ -195,10 +198,11 @@ class DDPGEnsembleTarget(OnlineRun):
                 biggest_v = qss[k + 1]
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
-        if weights_res is None:
-            return acts[biggest_i]
-        else:
-            return acts[biggest_i], b
+        return acts[biggest_i]
+        # if weights_res is None:
+        #     return acts[biggest_i]
+        # else:
+        #     return acts[biggest_i], b
 
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,

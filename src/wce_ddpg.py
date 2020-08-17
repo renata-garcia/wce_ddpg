@@ -138,8 +138,7 @@ def run_multi_ddpg():
             tmp_ensemble = getattr(getattr(online_run, "_agent"), "_ensemble")
             if test:
                 acts = online_run.get_actions(tmp_ensemble, sin, [observation])
-                action, w_train_test = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum, getattr(online_run, "_value_function").weights)
-                # print(w_train_test)
+                action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum)[0] #, getattr(online_run, "_value_function").weights
             elif online_iteration_mode:
                 if (random.random() < 0.05): #rnd_epsilon_action
                     action = online_run.get_policy_action(tmp_ensemble[int(random.random() * wce_num_ensemble)], sin, [observation])[0]
