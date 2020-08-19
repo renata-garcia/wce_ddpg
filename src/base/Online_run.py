@@ -137,7 +137,7 @@ class DDPGEnsemble(OnlineRun):
             print(td_mounted)
             print(target_mounted)
             print(q_mounted)
-        w_train = q_critic.train(td_mounted, addrw_mounted)
+        w_train = q_critic.train(td_mounted, addrw_mounted, ep)
         weights_mounted = weights_mounted + w_train
         weights_log = np.array([w_train])
         reward_log = np.array([[reward, steps_count, ep]])
@@ -249,7 +249,7 @@ class DDPGEnsembleTarget(OnlineRun):
             print(td_mounted)
             print(target_mounted)
             print(q_mounted)
-        w_train = q_critic.train(td_mounted, addrw_mounted)
+        w_train = q_critic.train(td_mounted, addrw_mounted, ep)
         weights_mounted = weights_mounted + w_train
         weights_log = np.array([w_train])
         reward_log = np.array([[reward, steps_count, ep]])
@@ -365,7 +365,7 @@ class DDPGEnsembleTDTrgt(OnlineRun):
             print(td_mounted)
             print(target_mounted)
             print(q_mounted)
-        w_train = q_critic.train(td_mounted, addrw_mounted)
+        w_train = q_critic.train(td_mounted, addrw_mounted, ep)
         weights_mounted = weights_mounted + w_train
         weights_log = np.array([w_train])
         reward_log = np.array([[reward, steps_count, ep]])

@@ -12,6 +12,7 @@ from CriticAggregation import WeightedByTDError
 from CriticAggregation import WeightedByAverage
 from CriticAggregation import WeightedByFixedHalf
 from CriticAggregation import WeightedByFixedOne
+from CriticAggregation import WeightedByTDErrorAEntropy
 
 #rm DDPGNetworkNode.py touch DDPGNetworkNode.py; chmod 755 DDPGNetworkNode.py; nano DDPGNetworkNode.py
 
@@ -43,6 +44,8 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
             q_critic = WeightedByAverage(session, qs1, td, self._num_ensemble)
         elif typeCriticAggregation == "TDError":
             q_critic = WeightedByTDError(session, qin, td, self._num_ensemble)
+        elif typeCriticAggregation == "TDErrorAEntropy":
+            q_critic = WeightedByTDErrorAEntropy(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "FixedByHalf":
             q_critic = WeightedByFixedHalf(session, qin, self._num_ensemble)
         elif typeCriticAggregation == "FixedOneZero":
