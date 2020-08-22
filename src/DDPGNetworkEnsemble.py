@@ -13,6 +13,7 @@ from CriticAggregation import WeightedByAverage
 from CriticAggregation import WeightedByFixedHalf
 from CriticAggregation import WeightedByFixedOne
 from CriticAggregation import WeightedByTDErrorAEntropy
+from CriticAggregation import WeightedByTDErrorNorm001K
 
 #rm DDPGNetworkNode.py touch DDPGNetworkNode.py; chmod 755 DDPGNetworkNode.py; nano DDPGNetworkNode.py
 
