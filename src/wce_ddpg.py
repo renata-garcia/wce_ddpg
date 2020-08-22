@@ -139,6 +139,22 @@ def run_multi_ddpg():
             if test:
                 acts = online_run.get_actions(tmp_ensemble, sin, [observation])
                 action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum)[0] #, getattr(online_run, "_value_function").weights
+
+                mean_acts = np.mean(acts)
+                dist_acts = acts - mean_acts
+                dist_acts_ens = acts - action  # TODO printing
+
+                if isInitialOfEpisode(steps_count):
+                    dist_acts_mounted = abs(dist_acts)
+                    dist_acts_ens_mounted = abs(dist_acts_ens)
+                    acts_diff_std = abs(np.sum(dist_acts) / wce_num_ensemble)
+                    acts_ens_diff_std = abs(np.sum(dist_acts_ens_mounted) / wce_num_ensemble)
+                else:
+                    dist_acts_mounted = dist_acts_mounted + abs(dist_acts)
+                    dist_acts_ens_mounted = dist_acts_ens_mounted + abs(dist_acts_ens)
+                    acts_diff_std = acts_diff_std + np.sum(abs(dist_acts) / wce_num_ensemble)
+                    acts_ens_diff_std = acts_ens_diff_std + np.sum(abs(dist_acts_ens_mounted) / wce_num_ensemble)
+
             elif online_iteration_mode:
                 if (random.random() < 0.05): #rnd_epsilon_action
                     action = online_run.get_policy_action(tmp_ensemble[int(random.random() * wce_num_ensemble)], sin, [observation])[0]
@@ -154,19 +170,6 @@ def run_multi_ddpg():
             else:
                 action = online_run.get_policy_action(tmp_ensemble[policy_chosen], sin, [observation])[0]
 
-            if len(acts) == 0:
-                mean_acts = np.zeros(0)
-            else:
-                mean_acts = np.mean(acts)
-            # dist_acts = acts[0] - mean_acts
-            # dist_acts_ens = acts - action #TODO printing
-
-            # if isInitialOfEpisode(steps_count):
-            #     dist_acts_mounted = abs(dist_acts)
-            #     acts_diff_std = abs(np.sum(dist_acts)/wce_num_ensemble)
-            # else:
-            #     dist_acts_mounted = dist_acts_mounted + abs(dist_acts)
-            #     acts_diff_std = acts_diff_std + np.sum(abs(dist_acts)/wce_num_ensemble)
 
             if not test:
                 #TODO read sigma for half cheetah scale=[1]
@@ -235,10 +238,15 @@ def run_multi_ddpg():
                 for iaa in range(wce_num_ensemble):
                     log = log + "\t%0.01f" % (act_acum[iaa])
 
-                # for ida in range(wce_num_ensemble):
-                #     log = log + "\t%0.01f" % (dist_acts_mounted[ida])
+                for ida in range(wce_num_ensemble):
+                    log = log + "\t%0.01f" % (dist_acts_mounted[ida])
 
-                # log = log + "\t%0.08f" % acts_diff_std
+                log = log + "\t%0.01f" % acts_diff_std
+
+                for ida in range(wce_num_ensemble):
+                    log = log + "\t%0.01f" % (dist_acts_ens_mounted[ida])
+
+                log = log + "\t%0.01f" % acts_ens_diff_std
 
                 file_output = open("../" + file_name, "a")
                 file_output.write(log + "\n")
@@ -249,6 +257,10 @@ def run_multi_ddpg():
                 td_mounted = np.zeros((wce_num_ensemble))
                 target_mounted = np.zeros((wce_num_ensemble))
                 q_mounted = np.zeros((wce_num_ensemble))
+                dist_acts_mounted = np.zeros((wce_num_ensemble))
+                acts_diff_std = np.zeros((wce_num_ensemble))
+                dist_acts_ens_mounted = np.zeros((wce_num_ensemble))
+                acts_ens_diff_std = np.zeros((wce_num_ensemble))
 
           #print(observation)
           # print("          ", ep, "          ", ep*100, "          ", "{:.1f}".format(episode_reward))

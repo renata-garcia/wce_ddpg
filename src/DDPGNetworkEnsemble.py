@@ -44,6 +44,8 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
             q_critic = WeightedByAverage(session, qs1, td, self._num_ensemble)
         elif typeCriticAggregation == "TDError":
             q_critic = WeightedByTDError(session, qin, td, self._num_ensemble)
+        elif typeCriticAggregation == "TDErrorNorm001Entropy":
+            q_critic = WeightedByTDErrorNorm001K(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDErrorAEntropy":
             q_critic = WeightedByTDErrorAEntropy(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "FixedByHalf":
