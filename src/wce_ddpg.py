@@ -239,12 +239,26 @@ def run_multi_ddpg():
                     log = log + "\t%0.01f" % (act_acum[iaa])
 
                 for ida in range(wce_num_ensemble):
-                    log = log + "\t%0.01f" % (dist_acts_mounted[ida])
+                    if len(dist_acts_mounted[ida][0]) == 1:
+                        log = log + "\t%0.01f" % (dist_acts_mounted[ida])
+                    else:
+                        for jda in range(len(dist_acts_mounted[ida][0])):
+                            if len(dist_acts_mounted[ida][0]) > 1:
+                                log = log + "\t%0.01f" % (dist_acts_mounted[ida][0][jda])
+                            else:
+                                log = log + "\t%0.01f" % (dist_acts_mounted[ida][jda])
 
                 log = log + "\t%0.01f" % acts_diff_std
 
                 for ida in range(wce_num_ensemble):
-                    log = log + "\t%0.01f" % (dist_acts_ens_mounted[ida])
+                    if len(dist_acts_mounted[ida][0]) == 1:
+                        log = log + "\t%0.01f" % (dist_acts_ens_mounted[ida])
+                    else:
+                        for jda in range(len(dist_acts_ens_mounted[ida][0])):
+                            if len(dist_acts_ens_mounted[ida][0]) > 1:
+                                log = log + "\t%0.01f" % (dist_acts_ens_mounted[ida][0][jda])
+                            else:
+                                log = log + "\t%0.01f" % (dist_acts_ens_mounted[ida][jda])
 
                 log = log + "\t%0.01f" % acts_ens_diff_std
 
