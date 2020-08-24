@@ -9,6 +9,10 @@ from DDPGNetwork import DDPGNetwork
 from DDPGNetworkNode import DDPGNetworkNode
 
 from CriticAggregation import WeightedByTDError
+from CriticAggregation import WeightedByTDError1KEntropy
+from CriticAggregation import WeightedByTDError10KEntropy
+from CriticAggregation import WeightedByTDError100KEntropy
+from CriticAggregation import WeightedByTDError1000Entropy
 from CriticAggregation import WeightedByAverage
 from CriticAggregation import WeightedByFixedHalf
 from CriticAggregation import WeightedByFixedOne
@@ -45,6 +49,14 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
             q_critic = WeightedByAverage(session, qs1, td, self._num_ensemble)
         elif typeCriticAggregation == "TDError":
             q_critic = WeightedByTDError(session, qin, td, self._num_ensemble)
+        elif typeCriticAggregation == "TDError1KEntropy":
+            q_critic = WeightedByTDError1KEntropy(session, qin, td, self._num_ensemble)
+        elif typeCriticAggregation == "TDError10KEntropy":
+            q_critic = WeightedByTDError10KEntropy(session, qin, td, self._num_ensemble)
+        elif typeCriticAggregation == "TDError100KEntropy":
+            q_critic = WeightedByTDError100Entropy(session, qin, td, self._num_ensemble)
+        elif typeCriticAggregation == "TDError1000KEntropy":
+            q_critic = WeightedByTDError1000Entropy(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDErrorNorm001Entropy":
             q_critic = WeightedByTDErrorNorm001K(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDErrorAEntropy":

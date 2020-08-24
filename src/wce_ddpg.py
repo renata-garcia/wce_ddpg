@@ -293,6 +293,7 @@ iteration_mode = sys.argv[3] #0=alternately_persistentç 1=randweightedç 2=onli
 run_offset = sys.argv[4]
 print_cvs = int(sys.argv[5])
 adding_name = sys.argv[6]
+fool_ps_name = sys.argv[7]
 
 cfg_yaml = ConfigYaml(file_yaml)
 wce_config = WCE_config()
