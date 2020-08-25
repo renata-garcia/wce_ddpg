@@ -51,7 +51,7 @@ def get_action_rnd_policy(sess, network, sin, obs):
 
 def run_multi_ddpg():
     #TODO see global variable
-    global ne, file_output, file_name, wce_num_ensemble
+    global ne, file_output, file_name, wce_num_ensemble, session
     online_iteration_mode = 0
 
     initial_weights = (1 / wce_num_ensemble)
@@ -104,8 +104,6 @@ def run_multi_ddpg():
                     policy_chosen += 1
                 else:
                     break
-            # print("policy_chosen: %0.1f, num_rnd: %0.2f, addrw_acum[0]: %0.2f, addrw_acum[1]: %0.2f, rw_weights[0]: %0.2f, rw_weights[1]: %0.2f" %
-            #       (policy_chosen, num_rnd, addrw_acum[0], addrw_acum[1], rw_weights[0], rw_weights[1]))
         else:
             print("wce_ddpg.py::iteration_mode::", iteration_mode)
             exit(-1)
@@ -314,9 +312,6 @@ session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 wce_num_ensemble = getattr(cfg_yaml, "_num_ensemble")
 
 print("# Set up DDPG Single or Ensemble")
-# if wce_num_ensemble == 1:
-#     online_run = rl.DDPGSingle(session, wce_num_ensemble, print_cvs)
-# else:
 
 if "Target" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[6:]
@@ -324,7 +319,6 @@ if "Target" in typeCriticAggregation:
 elif "TDTrgt" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[6:]
     online_run = rl.DDPGEnsembleTDTrgt(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
-
 else:
     typeCriticAggregation_ = typeCriticAggregation
     online_run = rl.DDPGEnsemble(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
