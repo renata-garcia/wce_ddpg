@@ -139,10 +139,10 @@ class WeightedByTDError100KEntropy(CriticAggregation):
     def train(self, td, addrw, ep):
         return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
 
-class WeightedByTDError1000Entropy(CriticAggregation):
+class WeightedByTDError1000KEntropy(CriticAggregation):
 
     def __init__(self, sess, qin, td, num_ensemble):
-        super(WeightedByTDError1000Entropy, self).__init__()
+        super(WeightedByTDError1000KEntropy, self).__init__()
         self._session = sess
         self._q_in = qin
         self._td = td
