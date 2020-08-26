@@ -138,7 +138,7 @@ class WeightedByTDError1000KEntropy(CriticAggregation):
 class WeightedByTDErrorNorm001K(CriticAggregation):
 
     def __init__(self, sess, qin, td, num_ensemble):
-        super(WeightedByTDError, self).__init__()
+        super(WeightedByTDErrorNorm001K, self).__init__()
         self._session = sess
         self._q_in = qin
         self._td = td
