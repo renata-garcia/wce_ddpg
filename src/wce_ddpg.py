@@ -136,7 +136,7 @@ def run_multi_ddpg():
             tmp_ensemble = getattr(getattr(online_run, "_agent"), "_ensemble")
             if test:
                 acts = online_run.get_actions(tmp_ensemble, sin, [observation])
-                action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum)[0] #, getattr(online_run, "_value_function").weights
+                action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum, getattr(online_run, "_value_function").weights)[0] #, getattr(online_run, "_value_function").weights
 
                 mean_acts = np.mean(acts)
                 dist_acts = acts - mean_acts
@@ -158,13 +158,13 @@ def run_multi_ddpg():
                     action = online_run.get_policy_action(tmp_ensemble[int(random.random() * wce_num_ensemble)], sin, [observation])[0]
                 else:
                     acts = online_run.get_actions(tmp_ensemble, sin, [observation])
-                    action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum)[0]
+                    action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum, getattr(online_run, "_value_function").weights)[0]
             elif (itmode == IterationMode.policy_persistent_random_weighted) or (itmode == IterationMode.policy_persistent_random_weighted_by_return): #TODO choose by steps (not persistent)
                 if (online_iteration_and_random_weighted_mode): #rnd_not_policy_persistent_random_weighted # TODO decide which policy to use for all steps, in episode
                     action = online_run.get_policy_action(tmp_ensemble[policy_chosen], sin, [observation])[0]
                 else:
                     acts = online_run.get_actions(tmp_ensemble, sin, [observation])
-                    action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum)[0]
+                    action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum, getattr(online_run, "_value_function").weights)[0]
             else:
                 action = online_run.get_policy_action(tmp_ensemble[policy_chosen], sin, [observation])[0]
 
@@ -319,6 +319,9 @@ if "Target" in typeCriticAggregation:
 elif "TDTrgt" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[6:]
     online_run = rl.DDPGEnsembleTDTrgt(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+elif "NormQValue" in typeCriticAggregation:
+    typeCriticAggregation_ = typeCriticAggregation[10:]
+    online_run = rl.DDPGEnsembleNormQValue(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 else:
     typeCriticAggregation_ = typeCriticAggregation
     online_run = rl.DDPGEnsemble(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
