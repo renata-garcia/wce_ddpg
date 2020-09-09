@@ -54,7 +54,7 @@ class WeightedByTDError1KEntropy(CriticAggregation):
         self.weights = tf.nn.softmax(weights_raw)
         self.q_critic = tf.reduce_sum((self._q_in * self.weights))
 
-        qs_loss = tf.reduce_sum( ((self._td ** 2) * self.weights) - 1*(-self.weights*tf.math.log(self.weights)) ) #-entropy (trying to maximize entropy)
+        qs_loss = tf.reduce_sum( ((self._td ** 2) * self.weights) - 1*(-self.weights*tf.math.log(1e-10+self.weights)) ) #-entropy (trying to maximize entropy)
         self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(qs_loss, name='qs_update')
 
     def train(self, td, addrw, ep):
@@ -79,7 +79,7 @@ class WeightedByTDError10KEntropy(CriticAggregation):
         self.weights = tf.nn.softmax(weights_raw)
         self.q_critic = tf.reduce_sum((self._q_in * self.weights))
 
-        qs_loss = tf.reduce_sum( ((self._td ** 2) * self.weights) -10*(-self.weights*tf.math.log(self.weights)) ) #-entropy (trying to maximize entropy)
+        qs_loss = tf.reduce_sum( ((self._td ** 2) * self.weights) -10*(-self.weights*tf.math.log(1e-10+self.weights)) ) #-entropy (trying to maximize entropy)
         self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(qs_loss, name='qs_update')
 
     def train(self, td, addrw, ep):
@@ -104,7 +104,7 @@ class WeightedByTDError100KEntropy(CriticAggregation):
         self.weights = tf.nn.softmax(weights_raw)
         self.q_critic = tf.reduce_sum((self._q_in * self.weights))
 
-        qs_loss = tf.reduce_sum( ((self._td ** 2) * self.weights) -100*(-self.weights*tf.math.log(self.weights)) ) #-entropy (trying to maximize entropy)
+        qs_loss = tf.reduce_sum( ((self._td ** 2) * self.weights) -100*(-self.weights*tf.math.log(1e-10+self.weights)) ) #-entropy (trying to maximize entropy)
         self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(qs_loss, name='qs_update')
 
     def train(self, td, addrw, ep):
@@ -129,7 +129,7 @@ class WeightedByTDError1000KEntropy(CriticAggregation):
         self.weights = tf.nn.softmax(weights_raw)
         self.q_critic = tf.reduce_sum((self._q_in * self.weights))
 
-        qs_loss = tf.reduce_sum( ((self._td ** 2) * self.weights) -1000*(-self.weights*tf.math.log(self.weights)) ) #-entropy (trying to maximize entropy)
+        qs_loss = tf.reduce_sum( ((self._td ** 2) * self.weights) -1000*(-self.weights*tf.math.log(1e-10+self.weights)) ) #-entropy (trying to maximize entropy)
         self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(qs_loss, name='qs_update')
 
     def train(self, td, addrw, ep):
@@ -155,7 +155,7 @@ class WeightedByTDErrorNorm001K(CriticAggregation):
         self.q_critic = tf.reduce_sum((self._q_in * self.weights))
 
         td2td_max = tf.reduce_max((self._td ** 2))
-        qs_loss = tf.reduce_sum( ((self._td ** 2)/td2td_max * self.weights)  - 0.01*(-self.weights*tf.math.log(self.weights)) )
+        qs_loss = tf.reduce_sum( ((self._td ** 2)/td2td_max * self.weights)  - 0.01*(-self.weights*tf.math.log(1e-10+self.weights)) )
         self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(qs_loss, name='qs_update')
 
     def train(self, td, addrw, ep):
@@ -183,7 +183,7 @@ class WeightedByTDErrorAEntropy(CriticAggregation):
 
         td2td_max = tf.reduce_max((self._td ** 2))
         K = 10/(100*(self.k_entropy//10))
-        qs_loss = tf.reduce_sum( ((self._td ** 2)/td2td_max * self.weights) - K*(-self.weights*tf.math.log(self.weights)) ) #-entropy (trying to maximize entropy)
+        qs_loss = tf.reduce_sum( ((self._td ** 2)/td2td_max * self.weights) - K*(-self.weights*tf.math.log(1e-10+self.weights)) ) #-entropy (trying to maximize entropy)
         self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(qs_loss, name='qs_update')
 
     def train(self, td, addrw, ep):
