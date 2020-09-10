@@ -35,6 +35,158 @@ class WeightedByTDError(CriticAggregation):
         return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
 
 
+class WeightedByTDErrorResetingWeights(CriticAggregation):
+
+    def __init__(self, sess, qin, td, num_ensemble):
+        super(WeightedByTDErrorResetingWeights, self).__init__()
+        self._session = sess
+        self._q_in = qin
+        self._td = td
+        self._lr_critic = 0.0001
+        self._num_ensemble = num_ensemble
+        self.q_critic = 0
+        self._reseted = 0
+        self._n_reseted = 0
+
+    def buildLayer(self):
+        print('CriticAggregation::WeightedByTDError_buildLayer')
+
+        self._weights_raw = tf.get_variable(name='weights_raw', dtype=tf.float32,
+                                           initializer=np.zeros(self._num_ensemble, np.float32))
+        self.weights = tf.nn.softmax(self._weights_raw)
+        self.q_critic = tf.reduce_sum((self._q_in * self.weights))
+
+        self._qs_loss = tf.reduce_sum( ((self._td ** 2) * self.weights) )
+        self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(self._qs_loss, name='qs_update')
+
+    def train(self, td, addrw, ep):
+        # if (ep % 50 > 0) and not self._reseted:
+        if ep/50 > self._n_reseted:
+            self._n_reseted = self._n_reseted + 1;
+            wr = self._session.run(self._weights_raw)
+            w = self._session.run(self.weights)
+            qslss = self._session.run(self._qs_loss, {self._td:td})
+            print(ep)
+            print(wr)
+            print(w)
+            print(qslss)
+            self._session.run(self._weights_raw.initializer)
+            wr = self._session.run(self._weights_raw)
+            print(wr)
+            print("RESETING****************************************************");
+        return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
+
+
+class WeightedByTDErrorPrintingQloss(CriticAggregation):
+
+    def __init__(self, sess, qin, td, num_ensemble):
+        super(WeightedByTDErrorResetingWeights, self).__init__()
+        self._session = sess
+        self._q_in = qin
+        self._td = td
+        self._lr_critic = 0.0001
+        self._num_ensemble = num_ensemble
+        self.q_critic = 0
+        self._n_reseted = 0
+
+    def buildLayer(self):
+        print('CriticAggregation::WeightedByTDError_buildLayer')
+
+        self._weights_raw = tf.get_variable(name='weights_raw', dtype=tf.float32,
+                                           initializer=np.zeros(self._num_ensemble, np.float32))
+        self.weights = tf.nn.softmax(self._weights_raw)
+        self.q_critic = tf.reduce_sum((self._q_in * self.weights))
+
+        self._qs_loss = tf.reduce_sum( ((self._td ** 2) * self.weights) )
+        self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(self._qs_loss, name='qs_update')
+
+    def train(self, td, addrw, ep):
+        if ep/50 > self._n_reseted:
+            self._n_reseted = self._n_reseted + 1;
+            wr = self._session.run(self._weights_raw)
+            w = self._session.run(self.weights)
+            qslss = self._session.run(self._qs_loss, {self._td:td})
+            print(ep)
+            print(wr)
+            print(w)
+            print(qslss)
+            print("RESETING****************************************************");
+        return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
+
+
+class WeightedByTDErrorResetingWeightsUntil200(CriticAggregation):
+
+    def __init__(self, sess, qin, td, num_ensemble):
+        super(WeightedByTDErrorResetingWeightsUntil200, self).__init__()
+        self._session = sess
+        self._q_in = qin
+        self._td = td
+        self._lr_critic = 0.0001
+        self._num_ensemble = num_ensemble
+        self.q_critic = 0
+        self._reseted = 0
+        self._n_reseted = 0
+
+    def buildLayer(self):
+        print('CriticAggregation::WeightedByTDError_buildLayer')
+
+        self._weights_raw = tf.get_variable(name='weights_raw', dtype=tf.float32,
+                                           initializer=np.zeros(self._num_ensemble, np.float32))
+        self.weights = tf.nn.softmax(self._weights_raw)
+        self.q_critic = tf.reduce_sum((self._q_in * self.weights))
+
+        self._qs_loss = tf.reduce_sum( ((self._td ** 2) * self.weights) )
+        self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(self._qs_loss, name='qs_update')
+
+    def train(self, td, addrw, ep):
+        if (ep/50 > self._n_reseted) and not self._reseted:
+            if ep > 200:
+                self._reseted = 1
+            self._n_reseted = self._n_reseted + 1;
+            wr = self._session.run(self._weights_raw)
+            w = self._session.run(self.weights)
+            qslss = self._session.run(self._qs_loss, {self._td:td})
+            print(ep)
+            print(wr)
+            print(w)
+            print(qslss)
+            self._session.run(self._weights_raw.initializer)
+            wr = self._session.run(self._weights_raw)
+            print(wr)
+            print("RESETING****************************************************");
+        return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
+
+
+class WeightedByTDErrorResetingWeights(CriticAggregation):
+
+    def __init__(self, sess, qin, td, num_ensemble):
+        super(WeightedByTDErrorResetingWeights, self).__init__()
+        self._session = sess
+        self._q_in = qin
+        self._td = td
+        self._lr_critic = 0.0001
+        self._num_ensemble = num_ensemble
+        self.q_critic = 0
+        self._n_reseted = 0
+
+    def buildLayer(self):
+        print('CriticAggregation::WeightedByTDErrorResetingWeights_buildLayer')
+
+        self._weights_raw = tf.get_variable(name='weights_raw', dtype=tf.float32,
+                                           initializer=np.zeros(self._num_ensemble, np.float32))
+        self.weights = tf.nn.softmax(self._weights_raw)
+        self.q_critic = tf.reduce_sum((self._q_in * self.weights))
+
+        qs_loss = tf.reduce_sum( ((self._td ** 2) * self.weights) )
+        self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(qs_loss, name='qs_update')
+
+    def train(self, td, addrw, ep):
+        if ep/50 > self._n_reseted:
+            self._n_reseted = self._n_reseted + 1
+            self._session.run(self._weights_raw.initializer)
+        return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
+
+
 class WeightedByTDError1KEntropy(CriticAggregation):
 
     def __init__(self, sess, qin, td, num_ensemble):

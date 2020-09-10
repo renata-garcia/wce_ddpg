@@ -9,6 +9,8 @@ from DDPGNetwork import DDPGNetwork
 from DDPGNetworkNode import DDPGNetworkNode
 
 from CriticAggregation import WeightedByTDError
+from CriticAggregation import WeightedByTDErrorResetingWeightsUntil200
+from CriticAggregation import WeightedByTDErrorResetingWeights
 from CriticAggregation import WeightedByTDError1KEntropy
 from CriticAggregation import WeightedByTDError10KEntropy
 from CriticAggregation import WeightedByTDError100KEntropy
@@ -49,6 +51,10 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
             q_critic = WeightedByAverage(session, qs1, td, self._num_ensemble)
         elif typeCriticAggregation == "TDError":
             q_critic = WeightedByTDError(session, qin, td, self._num_ensemble)
+        elif typeCriticAggregation == "TDErrorResetingWeightsUntil200":
+            q_critic = WeightedByTDErrorResetingWeightsUntil200(session, qin, td, self._num_ensemble)
+        elif typeCriticAggregation == "TDErrorResetingWeights":
+            q_critic = WeightedByTDErrorResetingWeights(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDError1KEntropy":
             q_critic = WeightedByTDError1KEntropy(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDError10KEntropy":
