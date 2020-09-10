@@ -142,18 +142,8 @@ class WeightedByTDErrorResetingWeightsUntil200(CriticAggregation):
         if (ep/50 > self._n_reseted) and not self._reseted:
             if ep > 200:
                 self._reseted = 1
-            self._n_reseted = self._n_reseted + 1;
-            wr = self._session.run(self._weights_raw)
-            w = self._session.run(self.weights)
-            qslss = self._session.run(self._qs_loss, {self._td:td})
-            print(ep)
-            print(wr)
-            print(w)
-            print(qslss)
+            self._n_reseted = self._n_reseted + 1
             self._session.run(self._weights_raw.initializer)
-            wr = self._session.run(self._weights_raw)
-            print(wr)
-            print("RESETING****************************************************");
         return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
 
 
