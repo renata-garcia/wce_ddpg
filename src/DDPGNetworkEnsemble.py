@@ -55,15 +55,15 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
             q_critic = WeightedByTDErrorResetingWeightsUntil200(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDErrorResetingWeights":
             q_critic = WeightedByTDErrorResetingWeights(session, qin, td, self._num_ensemble)
-        elif typeCriticAggregation == "TDError1KEntropy":
+        elif typeCriticAggregation == "TDError1KEntropyV2":
             q_critic = WeightedByTDError1KEntropy(session, qin, td, self._num_ensemble)
-        elif typeCriticAggregation == "TDError10KEntropy":
+        elif typeCriticAggregation == "TDError10KEntropyV2":
             q_critic = WeightedByTDError10KEntropy(session, qin, td, self._num_ensemble)
-        elif typeCriticAggregation == "TDError100KEntropy":
+        elif typeCriticAggregation == "TDError100KEntropyV2":
             q_critic = WeightedByTDError100KEntropy(session, qin, td, self._num_ensemble)
-        elif typeCriticAggregation == "TDError1000KEntropy":
+        elif typeCriticAggregation == "TDError1000KEntropyV2":
             q_critic = WeightedByTDError1000KEntropy(session, qin, td, self._num_ensemble)
-        elif typeCriticAggregation == "TDErrorNorm001Entropy":
+        elif typeCriticAggregation == "TDErrorNorm001EntropyV2":
             q_critic = WeightedByTDErrorNorm001K(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDErrorAEntropy":
             q_critic = WeightedByTDErrorAEntropy(session, qin, td, self._num_ensemble)

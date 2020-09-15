@@ -124,13 +124,13 @@ class DDPGEnsemble(OnlineRun):
 
             # TODO log td_l and target
             if len(td_mounted) == 0:
-                q_mounted = train_q_results
-                td_mounted = td_l
-                target_mounted = train_target_results
+                q_mounted = np.abs(train_q_results)
+                td_mounted = np.abs(td_l)
+                target_mounted = np.abs(train_target_results)
             else:
-                q_mounted = np.concatenate((q_mounted, train_q_results), axis=1)
-                td_mounted = np.concatenate((td_mounted, td_l), axis=1)
-                target_mounted = np.concatenate((target_mounted, train_target_results), axis=1)
+                q_mounted = np.concatenate((q_mounted, np.abs(train_q_results)), axis=1)
+                td_mounted = np.concatenate((td_mounted, np.abs(td_l)), axis=1)
+                target_mounted = np.concatenate((target_mounted, np.abs(train_target_results)), axis=1)
 
         if self._dbg_weightstderror:
             print("FINISHED")
@@ -260,13 +260,13 @@ class DDPGEnsembleNormQValue(OnlineRun):
 
             # TODO log td_l and target
             if len(td_mounted) == 0:
-                q_mounted = train_q_results
-                td_mounted = td_l
-                target_mounted = train_target_results
+                q_mounted = np.abs(train_q_results)
+                td_mounted = np.abs(td_l)
+                target_mounted = np.abs(train_target_results)
             else:
-                q_mounted = np.concatenate((q_mounted, train_q_results), axis=1)
-                td_mounted = np.concatenate((td_mounted, td_l), axis=1)
-                target_mounted = np.concatenate((target_mounted, train_target_results), axis=1)
+                q_mounted = np.concatenate((q_mounted, np.abs(train_q_results)), axis=1)
+                td_mounted = np.concatenate((td_mounted, np.abs(td_l)), axis=1)
+                target_mounted = np.concatenate((target_mounted, np.abs(train_target_results)), axis=1)
 
         if self._dbg_weightstderror:
             print("FINISHED")
@@ -372,13 +372,13 @@ class DDPGEnsembleTarget(OnlineRun):
 
             # TODO log td_l and target
             if len(td_mounted) == 0:
-                q_mounted = train_q_results
-                td_mounted = td_l
-                target_mounted = train_target_results
+                q_mounted = np.abs(train_q_results)
+                td_mounted = np.abs(td_l)
+                target_mounted = np.abs(train_target_results)
             else:
-                q_mounted = np.concatenate((q_mounted, train_q_results), axis=1)
-                td_mounted = np.concatenate((td_mounted, td_l), axis=1)
-                target_mounted = np.concatenate((target_mounted, train_target_results), axis=1)
+                q_mounted = np.concatenate((q_mounted, np.abs(train_q_results)), axis=1)
+                td_mounted = np.concatenate((td_mounted, np.abs(td_l)), axis=1)
+                target_mounted = np.concatenate((target_mounted, np.abs(train_target_results)), axis=1)
 
         if self._dbg_weightstderror:
             print("FINISHED")
@@ -488,13 +488,13 @@ class DDPGEnsembleTDTrgt(OnlineRun):
 
             # TODO log td_l and target
             if len(td_mounted) == 0:
-                q_mounted = train_q_results
-                td_mounted = td_l
-                target_mounted = train_target_results
+                q_mounted = np.abs(train_q_results)
+                td_mounted = np.abs(td_l)
+                target_mounted = np.abs(train_target_results)
             else:
-                q_mounted = np.concatenate((q_mounted, train_q_results), axis=1)
-                td_mounted = np.concatenate((td_mounted, td_l), axis=1)
-                target_mounted = np.concatenate((target_mounted, train_target_results), axis=1)
+                q_mounted = np.concatenate((q_mounted, np.abs(train_q_results)), axis=1)
+                td_mounted = np.concatenate((td_mounted, np.abs(td_l)), axis=1)
+                target_mounted = np.concatenate((target_mounted, np.abs(train_target_results)), axis=1)
 
         if self._dbg_weightstderror:
             print("FINISHED")
