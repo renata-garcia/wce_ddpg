@@ -218,14 +218,12 @@ def run_multi_ddpg():
                          log = log + "\t%0.01f"\
                                % (td_mounted[ine])
 
-                    target_mounted_t = np.abs(target_mounted)
-                    target_mounted_t = [sum(x) for x in zip(*target_mounted_t)]
+                    target_mounted = [sum(x) for x in zip(*target_mounted)]
                     for ine in range(wce_num_ensemble):
                         log = log + "\t%0.01f"\
                               % (target_mounted_t[ine])
 
-                    q_mounted_t = np.abs(q_mounted)
-                    q_mounted_t = [sum(x) for x in zip(*q_mounted_t)]
+                    q_mounted = [sum(x) for x in zip(*q_mounted)]
                     for ine in range(wce_num_ensemble):
                         log = log + "\t%0.01f"\
                               % (q_mounted_t[ine])
