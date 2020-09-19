@@ -9,6 +9,7 @@ class CriticAggregation(object):
     def __init__(self):
         print("class CriticAggregation(object)")
 
+
 class WeightedByTDError(CriticAggregation):
 
     def __init__(self, sess, qin, td, num_ensemble):
@@ -260,6 +261,7 @@ class WeightedByTDErrorResetingWeights(CriticAggregation):
             self._session.run(self._weights_raw.initializer)
         return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
 
+
 class WeightedByTDErrorLess1E3KEntropy(CriticAggregation):
 
     def __init__(self, sess, qin, td, num_ensemble):
@@ -284,6 +286,7 @@ class WeightedByTDErrorLess1E3KEntropy(CriticAggregation):
 
     def train(self, td, addrw, ep):
         return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
+
 
 class WeightedByTDErrorLess1E4KEntropy(CriticAggregation):
 
@@ -363,6 +366,7 @@ class WeightedByTDErrorNorm001K(CriticAggregation):
     def train(self, td, addrw, ep):
         return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
 
+
 class WeightedByTDErrorAEntropy(CriticAggregation):
 
     def __init__(self, sess, qin, td, num_ensemble):
@@ -392,6 +396,7 @@ class WeightedByTDErrorAEntropy(CriticAggregation):
         self.k_entropy = ep
         return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
 
+
 class WeightedByTDErrorInvW(CriticAggregation):
 
     def __init__(self, sess, qin, td, num_ensemble):
@@ -418,6 +423,7 @@ class WeightedByTDErrorInvW(CriticAggregation):
 
     def train(self, td, addrw, ep):
         return self._session.run([self.qs_update, self.weights], {self._td: td})[1]
+
 
 class WeightedByTDErrorAddingReward(CriticAggregation):
 
@@ -450,6 +456,7 @@ class WeightedByTDErrorAddingReward(CriticAggregation):
         qs_update_t, weights_t,  adding_reward_t,  adding_reward_in_t = self._session.run([self.qs_update, self.weights,  self._adding_reward, self._adding_reward_in], {self._td: td, self._adding_reward_in: addrw})
         return weights_t
 
+
 class WeightedByTDErrorAndReward(CriticAggregation):
 
     def __init__(self, sess, qin, td, num_ensemble, adding_reward):
@@ -475,6 +482,7 @@ class WeightedByTDErrorAndReward(CriticAggregation):
 
     def train(self, td, addrw, ep):
         return  self._session.run([self.qs_update, self.weights,  self._adding_reward_in], {self._td: td, self._adding_reward_in: addrw})[1]
+
 
 class WeightedByAddingReward(CriticAggregation):
 
@@ -503,6 +511,7 @@ class WeightedByAddingReward(CriticAggregation):
         self._session.run([self.qs_update ], {self._td: td, self._adding_reward_in: addrw})
         return addrw
 
+
 class WeightedByFixedHalf(CriticAggregation):
 
     def __init__(self, sess, qin, num_ensemble):
@@ -519,6 +528,7 @@ class WeightedByFixedHalf(CriticAggregation):
 
     def train(self, td, addrw, ep):
         return  (1/self._num_ensemble) * np.ones(self._num_ensemble, np.float32)
+
 
 class WeightedByFixedOne(CriticAggregation):
 
@@ -543,6 +553,7 @@ class WeightedByFixedOne(CriticAggregation):
         r[self._fixed_one] = 1.0
         return  r
 
+
 class WeightedByAverage(CriticAggregation):
 
     def __init__(self, sess, qin, td, num_ensemble):
@@ -551,12 +562,13 @@ class WeightedByAverage(CriticAggregation):
         self._q_in = qin
         self.q_critic = 0
         self.num_ensemble_ = num_ensemble
+        fixed = 1 / self.num_ensemble_
+        self.weights = [fixed for ii in range(self.num_ensemble_)]
 
     def buildLayer(self):
         print('CriticAggregation::WeightedByAverage_buildLayer')
         self.q_critic = keras.layers.average(self._q_in)
 
     def train(self, td, addrw, ep):
-        fixed = 1/self.num_ensemble_
-        run_weights = [fixed for ii in range(self.num_ensemble_)]
-        return run_weights
+        return self.weights
+

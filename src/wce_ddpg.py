@@ -213,17 +213,17 @@ def run_multi_ddpg():
                           % (weights_mounted[ine])
 
                 if weights_mounted[0] != 0:
-                    td_mounted = [sum(x) for x in zip(*td_mounted)]
+                    td_mounted_t = [sum(x) for x in zip(*td_mounted)]
                     for ine in range(wce_num_ensemble):
                          log = log + "\t%0.01f"\
-                               % (td_mounted[ine])
+                               % (td_mounted_t[ine])
 
-                    target_mounted = [sum(x) for x in zip(*target_mounted)]
+                    target_mounted_t = [sum(x) for x in zip(*target_mounted)]
                     for ine in range(wce_num_ensemble):
                         log = log + "\t%0.01f"\
                               % (target_mounted_t[ine])
 
-                    q_mounted = [sum(x) for x in zip(*q_mounted)]
+                    q_mounted_t = [sum(x) for x in zip(*q_mounted)]
                     for ine in range(wce_num_ensemble):
                         log = log + "\t%0.01f"\
                               % (q_mounted_t[ine])
