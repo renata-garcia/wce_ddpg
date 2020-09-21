@@ -9,6 +9,7 @@ from DDPGNetwork import DDPGNetwork
 from DDPGNetworkNode import DDPGNetworkNode
 
 from CriticAggregation import WeightedByTDError
+from CriticAggregation import WeightedByTDErrorAndTail
 from CriticAggregation import WeightedByTDErrorAndQ
 from CriticAggregation import WeightedByTDErrorAnd05Q
 from CriticAggregation import WeightedByTDErrorAnd01Q
@@ -53,6 +54,8 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
             q_critic = WeightedByAverage(session, qs1, td, self._num_ensemble)
         elif typeCriticAggregation == "TDError":
             q_critic = WeightedByTDError(session, qin, td, self._num_ensemble)
+        elif typeCriticAggregation == "TDErrorAndTail":
+            q_critic = WeightedByTDErrorAndTail(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDErrorAndQ":
             q_critic = WeightedByTDErrorAndQ(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDErrorAnd05Q":
