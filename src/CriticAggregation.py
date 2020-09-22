@@ -55,7 +55,7 @@ class WeightedByTDErrorAndTail(CriticAggregation):
         self.weights = tf.nn.softmax(weights_raw)
         self.q_critic = tf.reduce_sum((self._q_in * self.weights))
         td2td = (self._td ** 2)
-        qs_loss = tf.reduce_sum( td2td * self.weights + 2*tf.exp(-0.1*td2td + 1e-10) )
+        qs_loss = tf.reduce_sum( td2td * self.weights - 2*tf.exp(-0.1*td2td + 1e-10) )
         self.qs_update = tf.train.AdamOptimizer(self._lr_critic).minimize(qs_loss, name='qs_update')
 
     def train(self, td, addrw, ep):
