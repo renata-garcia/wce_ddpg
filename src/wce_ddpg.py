@@ -317,9 +317,12 @@ if "Target" in typeCriticAggregation:
 elif "TDTrgt" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[6:]
     online_run = rl.DDPGEnsembleTDTrgt(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+elif "NormV2QValue" in typeCriticAggregation:
+    typeCriticAggregation_ = typeCriticAggregation[12:]
+    online_run = rl.DDPGEnsembleNormV2QValue(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 elif "NormQValue" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[10:]
-    online_run = rl.DDPGEnsembleTDTrgt(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+    online_run = rl.DDPGEnsembleNormQValue(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 else:
     typeCriticAggregation_ = typeCriticAggregation
     online_run = rl.DDPGEnsemble(session, wce_num_ensemble, dbg_weightstderror, print_cvs)

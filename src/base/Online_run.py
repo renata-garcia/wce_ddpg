@@ -204,7 +204,7 @@ class DDPGEnsembleNormQValue(OnlineRun):
                 tmp_iaction.append(ens_qs[ii][iaction][0])
             # normalize
             norm_q_p = tmp_iaction - np.amin(tmp_iaction)
-            norm_q = norm_q_p/np.amax(norm_q_p)
+            norm_q = norm_q_p/(np.amax(norm_q_p) + 1e-10)
             norm_qss.append(np.sum(norm_q*weights))
 
         biggest_v = norm_qss[0]
