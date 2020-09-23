@@ -139,7 +139,7 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
         # Train critic
         feed_dict = {self._sin :  obs}
         for j in range(self._num_ensemble):
-            feed_dict[self._ensemble[j][0].a_in] = act
+            feed_dict[self._ensemble[j][0].a_in] = np.vstack(act)
             feed_dict[self._ensemble[j][0].q_target] = q_target[j]
 
         returns = []
