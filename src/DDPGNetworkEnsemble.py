@@ -9,6 +9,7 @@ from DDPGNetwork import DDPGNetwork
 from DDPGNetworkNode import DDPGNetworkNode
 
 from CriticAggregation import WeightedByTDError
+from CriticAggregation import WeightedByTDErrorWeighing
 from CriticAggregation import WeightedByTDErrorNormByExp
 from CriticAggregation import WeightedByTDErrorAndTail
 from CriticAggregation import WeightedByTDErrorAndQ
@@ -25,7 +26,7 @@ from CriticAggregation import WeightedByFixedOne
 from CriticAggregation import WeightedByTDErrorAEntropy
 from CriticAggregation import WeightedByTDErrorNorm001K
 
-#rm DDPGNetworkNode.py touch DDPGNetworkNode.py; chmod 755 DDPGNetworkNode.py; nano DDPGNetworkNode.py
+#rm DDPGNetworkEnsemble.py; touch DDPGNetworkEnsemble.py; chmod 755 DDPGNetworkEnsemble.py; nano DDPGNetworkEnsemble.py
 
 class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
     def __init__(self, sess, sin, cfg_ens, action_space, num_ensemble, max_action):
@@ -55,6 +56,8 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
             q_critic = WeightedByAverage(session, qs1, td, self._num_ensemble)
         elif typeCriticAggregation == "TDError":
             q_critic = WeightedByTDError(session, qin, td, self._num_ensemble)
+        elif typeCriticAggregation == "TDErrorWeighing":
+            q_critic = WeightedByTDErrorWeighing(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDErrorNormByExp":
             q_critic = WeightedByTDErrorNormByExp(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDErrorAndTail":
