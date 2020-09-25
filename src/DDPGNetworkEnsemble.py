@@ -59,7 +59,7 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
             q_critic = WeightedByTDError(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDErrorWeighing":
             q_critic = WeightedByTDErrorWeighing(session, qin, td, self._num_ensemble)
-        elif typeCriticAggregation == "WeightedByTDErrorWeighingMax":
+        elif typeCriticAggregation == "TDErrorWeighingMax":
             q_critic = WeightedByTDErrorWeighingMax(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDErrorNormByExp":
             q_critic = WeightedByTDErrorNormByExp(session, qin, td, self._num_ensemble)
