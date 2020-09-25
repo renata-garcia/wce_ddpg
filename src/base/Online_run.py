@@ -201,11 +201,14 @@ class DDPGEnsembleNormV2QValue(OnlineRun):
         norm_qss = []
         for iaction in range(self._num_ensemble):
             tmp_iaction = []
+            # 1 - e ^ {-10*x}
             for ii in range(self._num_ensemble):
                 tmp_iaction.append(ens_qs[ii][iaction][0])
             # normalize
             norm_q_p = tmp_iaction - np.amin(tmp_iaction)
             norm_ens_qs.append(norm_q_p/(np.amax(norm_q_p) + 1e-10))
+            # norm_ens_qs.append(1-np.exp(-20*norm_q_p/(np.amax(norm_q_p) + 1e-10)))
+
         for iq in range(self._num_ensemble):
             tmp_qs = []
             for ii in range(self._num_ensemble):
