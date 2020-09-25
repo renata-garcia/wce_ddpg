@@ -161,7 +161,7 @@ class DDPGEnsemble(OnlineRun):
         return q_mounted, target_mounted, td_mounted, w_train, weights_mounted
 
 
-class DDPGEnsembleNormQValue(OnlineRun):
+class DDPGEnsembleNormV2QValue(OnlineRun):
 
 
     def __init__(self, sess, num_ensemble, dbg_weightstderror, print_cvs):
@@ -197,6 +197,7 @@ class DDPGEnsembleNormQValue(OnlineRun):
 
         #normlize Q values
         norm_q = []
+        norm_ens_qs = []
         norm_qss = []
         for iaction in range(self._num_ensemble):
             tmp_iaction = []
@@ -204,8 +205,12 @@ class DDPGEnsembleNormQValue(OnlineRun):
                 tmp_iaction.append(ens_qs[ii][iaction][0])
             # normalize
             norm_q_p = tmp_iaction - np.amin(tmp_iaction)
-            norm_q = norm_q_p/(np.amax(norm_q_p) + 1e-10)
-            norm_qss.append(np.sum(norm_q*weights))
+            norm_ens_qs.append(norm_q_p/(np.amax(norm_q_p) + 1e-10))
+        for iq in range(self._num_ensemble):
+            tmp_qs = []
+            for ii in range(self._num_ensemble):
+                tmp_qs.append(norm_ens_qs[iq][ii])
+            norm_qss.append(np.sum(tmp_qs*weights))
 
         biggest_v = norm_qss[0]
         biggest_i = 0
