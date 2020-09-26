@@ -18,6 +18,8 @@ from CriticAggregation import WeightedByTDErrorAnd05Q
 from CriticAggregation import WeightedByTDErrorAnd01Q
 from CriticAggregation import WeightedByTDErrorResetingWeightsUntil200
 from CriticAggregation import WeightedByTDErrorResetingWeights
+from CriticAggregation import WeightedByTDError1E3TarrgetEntropy
+from CriticAggregation import WeightedByTDError1E4TarrgetEntropy
 from CriticAggregation import WeightedByTDErrorLess1E3KEntropy
 from CriticAggregation import WeightedByTDErrorLess1E4KEntropy
 from CriticAggregation import WeightedByTDErrorAnd1E4KEntropy
@@ -75,6 +77,10 @@ class DDPGNetworkEnsemble(ddpg_cfg.DDPGNetworkConfig):
             q_critic = WeightedByTDErrorResetingWeightsUntil200(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDErrorResetingWeights":
             q_critic = WeightedByTDErrorResetingWeights(session, qin, td, self._num_ensemble)
+        elif typeCriticAggregation == "TDError1E3TarrgetEntropy":
+            q_critic = WeightedByTDError1E3TarrgetEntropy(session, qin, td, self._num_ensemble)
+        elif typeCriticAggregation == "TDError1E4TarrgetEntropy":
+            q_critic = WeightedByTDError1E4TarrgetEntropy(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDErrorLess1E3KEntropy":
             q_critic = WeightedByTDErrorLess1E3KEntropy(session, qin, td, self._num_ensemble)
         elif typeCriticAggregation == "TDErrorLess1E4KEntropy":
