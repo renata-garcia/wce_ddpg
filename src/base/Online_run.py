@@ -4,7 +4,6 @@ import itertools
 import numpy as np
 import tensorflow as tf
 
-
 class OnlineRun:
     def __init__(self):
         self._agent = 0
@@ -305,7 +304,7 @@ class DDPGEnsembleNormV2QValue(OnlineRun):
         return q_mounted, target_mounted, td_mounted, w_train, weights_mounted
 
 
-class DDPGEnsembleNormV3QValue(OnlineRun):
+class DDPGEnsembleNormSoftmaxQValue(OnlineRun):
 
 
     def __init__(self, sess, num_ensemble, dbg_weightstderror, print_cvs):
@@ -313,7 +312,7 @@ class DDPGEnsembleNormV3QValue(OnlineRun):
         self._num_ensemble = num_ensemble
         self._dbg_weightstderror = dbg_weightstderror
         self._print_cvs = print_cvs
-        print("class DDPG_Ensemble_Norm_V3_QValue")
+        print("class DDPGEnsembleNormSoftmaxQValue")
 
 
     def get_actions(self, ensemble, sin, obs):
@@ -343,19 +342,52 @@ class DDPGEnsembleNormV3QValue(OnlineRun):
         norm_q = []
         norm_ens_qs = []
         norm_qss = []
-        for iaction in range(self._num_ensemble):
+
+        # q[iq,a_0] q[iq,a_1] q[iq,a_2]
+        # q(act)(iq) q(act)(iq) q(act)(iq)
+        # **q(0)(0)** q(0)(1) q(0)(2)
+        # **q(1)(0)** q(1)(1) q(1)(2)
+        # **q(2)(0)** q(2)(1) q(2)(2)
+        for iq in range(self._num_ensemble):
             tmp_iaction = []
             # 1 - e ^ {-10*x}
-            for ii in range(self._num_ensemble):
-                tmp_iaction.append(ens_qs[ii][iaction][0])
+            for i_act in range(self._num_ensemble):
+                tmp_iaction.append(ens_qs[i_act][iq][0])
             # normalize
-            norm_q_p = np.exp(tmp_iaction)/np.sum(tmp_iaction)
+            i = 0
+            temp = 1
+            while ((np.hstack(tmp_iaction)/temp) < -5).any() and i < 10:
+                i = i + 1
+                temp = temp*1e1
+                # print("------------------")
+                # print(i)
+                # print(temp)
+                # print(np.hstack(tmp_iaction)/temp)
+                # print(weights)
+                if i > 10:
+                    print("Online.py: tmp_iaction.any() < -5::i=10")
+                    break;
+
+            t_exp = np.exp(np.hstack(tmp_iaction)/temp)
+            norm_q_p = t_exp/np.sum(t_exp)
+            # if np.isnan(norm_q_p[0]):
+                # print("******************")
+                # print(tmp_iaction)
+                # print(t_exp)
+                # print(norm_q_p)
+                # print(weights)
+
             norm_ens_qs.append(norm_q_p)
 
+        # q[act,iq_0] q[act,iq_1] q[act,iq_2]
+        # q(act)(iq) q(act)(iq) q(act)(iq)
+        # **q(0)(0)** q(1)(0) q(2)(0)
+        # **q(0)(1)** q(1)(1) q(2)(1)
+        # **q(0)(2)** q(1)(2) q(2)(2)
         for iq in range(self._num_ensemble):
             tmp_qs = []
-            for ii in range(self._num_ensemble):
-                tmp_qs.append(norm_ens_qs[iq][ii])
+            for i_act in range(self._num_ensemble):
+                tmp_qs.append(norm_ens_qs[i_act][iq])
             norm_qss.append(np.sum(tmp_qs*weights))
 
         biggest_v = norm_qss[0]
