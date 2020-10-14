@@ -136,7 +136,8 @@ def run_multi_ddpg():
             tmp_ensemble = getattr(getattr(online_run, "_agent"), "_ensemble")
             if test:
                 acts = online_run.get_actions(tmp_ensemble, sin, [observation])
-                action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum, getattr(online_run, "_value_function").weights)[0] #, getattr(online_run, "_value_function").weights
+                action_arr, prob = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum, getattr(online_run, "_value_function").weights) #, getattr(online_run, "_value_function").weights
+                action = action_arr[0]
 
                 mean_acts = np.mean(acts)
                 dist_acts = acts - mean_acts
@@ -147,12 +148,13 @@ def run_multi_ddpg():
                     dist_acts_ens_mounted = abs(dist_acts_ens)
                     acts_diff_std = abs(np.sum(dist_acts) / wce_num_ensemble)
                     acts_ens_diff_std = abs(np.sum(dist_acts_ens_mounted) / wce_num_ensemble)
+                    prob_mounted = prob[0]
                 else:
                     dist_acts_mounted = dist_acts_mounted + abs(dist_acts)
                     dist_acts_ens_mounted = dist_acts_ens_mounted + abs(dist_acts_ens)
                     acts_diff_std = acts_diff_std + np.sum(abs(dist_acts) / wce_num_ensemble)
                     acts_ens_diff_std = acts_ens_diff_std + np.sum(abs(dist_acts_ens_mounted) / wce_num_ensemble)
-
+                    prob_mounted = [x + y for x, y in zip(prob_mounted, prob[0])]
             elif online_iteration_mode:
                 if (random.random() < 0.05): #rnd_epsilon_action
                     action = online_run.get_policy_action(tmp_ensemble[int(random.random() * wce_num_ensemble)], sin, [observation])[0]
@@ -258,6 +260,9 @@ def run_multi_ddpg():
 
                 log = log + "\t%0.01f" % acts_ens_diff_std
 
+                for ipb in range(wce_num_ensemble):
+                    log = log + "\t%0.01f" % (prob_mounted[ipb])
+
                 file_output = open("../" + file_name, "a")
                 file_output.write(log + "\n")
                 file_output.close()
@@ -267,10 +272,12 @@ def run_multi_ddpg():
                 td_mounted = np.zeros((wce_num_ensemble))
                 target_mounted = np.zeros((wce_num_ensemble))
                 q_mounted = np.zeros((wce_num_ensemble))
+                prob_mounted = np.zeros((wce_num_ensemble))
                 dist_acts_mounted = np.zeros((wce_num_ensemble))
                 acts_diff_std = np.zeros((wce_num_ensemble))
                 dist_acts_ens_mounted = np.zeros((wce_num_ensemble))
                 acts_ens_diff_std = np.zeros((wce_num_ensemble))
+                prob_mounted = []
 
           #print(observation)
           # print("          ", ep, "          ", ep*100, "          ", "{:.1f}".format(episode_reward))
@@ -320,6 +327,9 @@ elif "TDTrgt" in typeCriticAggregation:
 elif "NormSoftmaxQValue" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[17:]
     online_run = rl.DDPGEnsembleNormSoftmaxQValue(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+elif "NormSoftmaxMinQValue" in typeCriticAggregation:
+    typeCriticAggregation_ = typeCriticAggregation[20:]
+    online_run = rl.DDPGEnsembleNormSoftmaxMinQValue(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 elif "NormV2QValue" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[12:]
     online_run = rl.DDPGEnsembleNormV2QValue(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
