@@ -313,6 +313,7 @@ class DDPGEnsembleNormSoftmaxQValue(OnlineRun):
 
 
     def get_action(self, ensemble, sin, obs, q_res, acts, act_acum, weights): #, weights_res=None
+        prob = []
         ens_qs = []
         ret_dict = []
         for j in range(self._num_ensemble):
@@ -350,12 +351,15 @@ class DDPGEnsembleNormSoftmaxQValue(OnlineRun):
                     print("Online.py: tmp_iaction.any() < -5::i=10")
                     break;
 
-            t_exp = np.exp(np.hstack(tmp_iaction)/temp)
+            expoent = np.hstack(tmp_iaction)/temp
+            norm_q.append(expoent)
+            t_exp = np.exp(expoent)
             norm_q_p = t_exp/np.sum(t_exp)
             # if np.isnan(norm_q_p[0]):
                 # print("******************")
 
             norm_ens_qs.append(norm_q_p)
+        prob.append(norm_q)
 
         # q[act,iq_0] q[act,iq_1] q[act,iq_2]
         # q(act)(iq) q(act)(iq) q(act)(iq)
@@ -375,7 +379,7 @@ class DDPGEnsembleNormSoftmaxQValue(OnlineRun):
                 biggest_v = norm_qss[k + 1]
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
-        return acts[biggest_i]
+        return acts[biggest_i], prob
 
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
