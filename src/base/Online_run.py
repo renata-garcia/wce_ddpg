@@ -530,25 +530,16 @@ class DDPGEnsembleNormSoftmaxMinQValue(OnlineRun):
             # 1 - e ^ {-10*x}
             for i_act in range(self._num_ensemble):
                 tmp_iaction.append(ens_qs[i_act][iq][0])
-            # normalize
-            min = np.min(np.hstack(tmp_iaction))
-            # print("*********" + str(iq))
-            # print(np.hstack(tmp_iaction))
-            # print(min)
-            t_exp = np.exp((np.hstack(tmp_iaction)-min)/1e1)
-            # print((np.hstack(tmp_iaction)-min)/1e10)
-            # print("exp dist")
-            # print(t_exp)
+            exponent = np.hstack(tmp_iaction) - np.min(np.hstack(tmp_iaction))
+            norm_q.append(exponent)
+            t_exp = np.exp(exponent)
             norm_q_p = t_exp/np.sum(t_exp)
-            # print(norm_q_p)
             # if np.isnan(norm_q_p[0]):
                 # print("******************")
-                # print(tmp_iaction)
-                # print(t_exp)
-                # print(norm_q_p)
-                # print(weights)
 
             norm_ens_qs.append(norm_q_p)
+
+        prob.append(norm_q)
 
         # q[act,iq_0] q[act,iq_1] q[act,iq_2]
         # q(act)(iq) q(act)(iq) q(act)(iq)
@@ -560,7 +551,6 @@ class DDPGEnsembleNormSoftmaxMinQValue(OnlineRun):
             for i_act in range(self._num_ensemble):
                 tmp_qs.append(norm_ens_qs[i_act][iq])
             norm_qss.append(np.sum(tmp_qs*weights))
-            prob.append(tmp_qs)
 
         biggest_v = norm_qss[0]
         biggest_i = 0

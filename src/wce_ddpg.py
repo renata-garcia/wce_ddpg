@@ -260,8 +260,8 @@ def run_multi_ddpg():
 
                 log = log + "\t%0.01f" % acts_ens_diff_std
 
-                for ipb in range(wce_num_ensemble):
-                    log = log + "\t%0.01f" % (prob_mounted[ipb])
+                for ipb in range(wce_num_ensemble*wce_num_ensemble):
+                    log = log + "\t%0.01f" % (np.hstack(prob_mounted)[ipb])
 
                 file_output = open("../" + file_name, "a")
                 file_output.write(log + "\n")
