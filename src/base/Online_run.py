@@ -13,6 +13,11 @@ class OnlineRun:
     def get_policy_action(self, network, sin, obs):
         return self._session.run(network[0].a_out, {sin: obs})
 
+    def get_actions(self, ensemble, sin, obs):
+        act_nodes = [e[0].a_out for e in ensemble]
+        acts =  self._session.run(act_nodes, {sin: obs})
+        return acts
+
 class DDPGSingle(OnlineRun):
     def __init__(self, sess, num_ensemble, print_cvs):
         self._session = sess
@@ -40,7 +45,7 @@ class DDPGSingle(OnlineRun):
 
         ## END TRAIN ACTOR CRITIC
 
-class DDPGEnsemble(OnlineRun):
+class DDPGPlainEnsemble(OnlineRun):
 
 
     def __init__(self, sess, num_ensemble, dbg_weightstderror, print_cvs):
@@ -48,17 +53,12 @@ class DDPGEnsemble(OnlineRun):
         self._num_ensemble = num_ensemble
         self._dbg_weightstderror = dbg_weightstderror
         self._print_cvs = print_cvs
-        print("class DDPG_ensemble")
-
-
-    def get_actions(self, ensemble, sin, obs):
-        act_nodes = [e[0].a_out for e in ensemble]
-        acts =  self._session.run(act_nodes, {sin: obs})
-        return acts
+        print("class DDPGPlainEnsemble")
 
 
     def get_action(self, ensemble, sin, obs, q_res, acts, act_acum, weights=None): #, weights_res=None
         qss = []
+        norm_q = []
         for ine in range(self._num_ensemble):
             feed_dict = {sin: obs}
             for j in range(self._num_ensemble):
@@ -70,6 +70,8 @@ class DDPGEnsemble(OnlineRun):
             #     a, b = self._session.run([q_res, weights_res], feed_dict)
             qss.append(q_crtc)
 
+        norm_q.append(qss)
+
         biggest_v = qss[0]
         biggest_i = 0
         for k in range(self._num_ensemble - 1):
@@ -77,12 +79,22 @@ class DDPGEnsemble(OnlineRun):
                 biggest_v = qss[k + 1]
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
-        return acts[biggest_i]
+
+        return acts[biggest_i], [[0]]
         # if weights_res is None:
         #     return acts[biggest_i]
         # else:
         #     return acts[biggest_i], b
 
+class DDPGEnsemble(DDPGPlainEnsemble):
+
+
+    def __init__(self, sess, num_ensemble, dbg_weightstderror, print_cvs):
+        self._session = sess
+        self._num_ensemble = num_ensemble
+        self._dbg_weightstderror = dbg_weightstderror
+        self._print_cvs = print_cvs
+        print("class DDPG_ensemble")
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
                        weights_mounted, ddpgne, cfg_ens, q_critic, batch_size):
@@ -170,13 +182,6 @@ class DDPGEnsembleNormV2QValue(OnlineRun):
         self._print_cvs = print_cvs
         print("class DDPG_ensemble")
 
-
-    def get_actions(self, ensemble, sin, obs):
-        act_nodes = [e[0].a_out for e in ensemble]
-        acts =  self._session.run(act_nodes, {sin: obs})
-        return acts
-
-
     def get_action(self, ensemble, sin, obs, q_res, acts, act_acum, weights): #, weights_res=None
         ens_qs = []
         ret_dict = []
@@ -189,10 +194,6 @@ class DDPGEnsembleNormV2QValue(OnlineRun):
             for j in range(self._num_ensemble):
                 feed_dict[ensemble[j][0].a_in] = acts[ine]
             ens_qs.append(self._session.run(ret_dict, feed_dict))
-            # if weights_res is None:
-            #     a = self._session.run(q_res, feed_dict)
-            # else:
-            #     a, b = self._session.run([q_res, weights_res], feed_dict)
 
         #normlize Q values
         norm_q = []
@@ -221,11 +222,7 @@ class DDPGEnsembleNormV2QValue(OnlineRun):
                 biggest_v = norm_qss[k + 1]
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
-        return acts[biggest_i]
-        # if weights_res is None:
-        #     return acts[biggest_i]
-        # else:
-        #     return acts[biggest_i], b
+        return acts[biggest_i], [[0]]
 
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
@@ -315,12 +312,6 @@ class DDPGEnsembleNormSoftmaxQValue(OnlineRun):
         print("class DDPGEnsembleNormSoftmaxQValue")
 
 
-    def get_actions(self, ensemble, sin, obs):
-        act_nodes = [e[0].a_out for e in ensemble]
-        acts =  self._session.run(act_nodes, {sin: obs})
-        return acts
-
-
     def get_action(self, ensemble, sin, obs, q_res, acts, act_acum, weights): #, weights_res=None
         ens_qs = []
         ret_dict = []
@@ -333,10 +324,6 @@ class DDPGEnsembleNormSoftmaxQValue(OnlineRun):
             for j in range(self._num_ensemble):
                 feed_dict[ensemble[j][0].a_in] = acts[ine]
             ens_qs.append(self._session.run(ret_dict, feed_dict))
-            # if weights_res is None:
-            #     a = self._session.run(q_res, feed_dict)
-            # else:
-            #     a, b = self._session.run([q_res, weights_res], feed_dict)
 
         #normlize Q values
         norm_q = []
@@ -359,11 +346,6 @@ class DDPGEnsembleNormSoftmaxQValue(OnlineRun):
             while ((np.hstack(tmp_iaction)/temp) < -5).any() and i < 10:
                 i = i + 1
                 temp = temp*1e1
-                # print("------------------")
-                # print(i)
-                # print(temp)
-                # print(np.hstack(tmp_iaction)/temp)
-                # print(weights)
                 if i > 10:
                     print("Online.py: tmp_iaction.any() < -5::i=10")
                     break;
@@ -372,10 +354,6 @@ class DDPGEnsembleNormSoftmaxQValue(OnlineRun):
             norm_q_p = t_exp/np.sum(t_exp)
             # if np.isnan(norm_q_p[0]):
                 # print("******************")
-                # print(tmp_iaction)
-                # print(t_exp)
-                # print(norm_q_p)
-                # print(weights)
 
             norm_ens_qs.append(norm_q_p)
 
@@ -398,10 +376,6 @@ class DDPGEnsembleNormSoftmaxQValue(OnlineRun):
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
         return acts[biggest_i]
-        # if weights_res is None:
-        #     return acts[biggest_i]
-        # else:
-        #     return acts[biggest_i], b
 
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
@@ -426,11 +400,6 @@ class DDPGEnsembleNormSoftmaxQValue(OnlineRun):
            train_target_results.append([rew[ii] * cfg_ens[ne]['reward_scale'] + cfg_ens[ne]['gamma'] * train_nextq_results[ne][ii] for ii in range(batch_size)])
 
         # Update critic using target and actor using gradient
-        # print("********************************")
-        # print(obs)
-        # print(act)
-        # print(len(act))
-        # print(train_target_results)
         ddpgne.train(obs, act, train_target_results)
 
         for ne in range(self._num_ensemble):
@@ -491,12 +460,6 @@ class DDPGEnsembleNormSoftmaxMinQValue(OnlineRun):
         print("class DDPGEnsembleNormSoftmaxMinQValue")
 
 
-    def get_actions(self, ensemble, sin, obs):
-        act_nodes = [e[0].a_out for e in ensemble]
-        acts =  self._session.run(act_nodes, {sin: obs})
-        return acts
-
-
     def get_action(self, ensemble, sin, obs, q_res, acts, act_acum, weights): #, weights_res=None
         prob = []
         ens_qs = []
@@ -510,10 +473,6 @@ class DDPGEnsembleNormSoftmaxMinQValue(OnlineRun):
             for j in range(self._num_ensemble):
                 feed_dict[ensemble[j][0].a_in] = acts[ine]
             ens_qs.append(self._session.run(ret_dict, feed_dict))
-            # if weights_res is None:
-            #     a = self._session.run(q_res, feed_dict)
-            # else:
-            #     a, b = self._session.run([q_res, weights_res], feed_dict)
 
         #normlize Q values
         norm_q = []
@@ -560,10 +519,6 @@ class DDPGEnsembleNormSoftmaxMinQValue(OnlineRun):
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
         return acts[biggest_i], prob
-        # if weights_res is None:
-        #     return acts[biggest_i]
-        # else:
-        #     return acts[biggest_i], b
 
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
@@ -588,11 +543,6 @@ class DDPGEnsembleNormSoftmaxMinQValue(OnlineRun):
            train_target_results.append([rew[ii] * cfg_ens[ne]['reward_scale'] + cfg_ens[ne]['gamma'] * train_nextq_results[ne][ii] for ii in range(batch_size)])
 
         # Update critic using target and actor using gradient
-        # print("********************************")
-        # print(obs)
-        # print(act)
-        # print(len(act))
-        # print(train_target_results)
         ddpgne.train(obs, act, train_target_results)
 
         for ne in range(self._num_ensemble):
@@ -653,12 +603,6 @@ class DDPGEnsembleNormSoftmaxMin100TQValue(OnlineRun):
         print("class DDPGEnsembleNormSoftmaxMin100TQValue")
 
 
-    def get_actions(self, ensemble, sin, obs):
-        act_nodes = [e[0].a_out for e in ensemble]
-        acts =  self._session.run(act_nodes, {sin: obs})
-        return acts
-
-
     def get_action(self, ensemble, sin, obs, q_res, acts, act_acum, weights): #, weights_res=None
         prob = []
         ens_qs = []
@@ -672,10 +616,6 @@ class DDPGEnsembleNormSoftmaxMin100TQValue(OnlineRun):
             for j in range(self._num_ensemble):
                 feed_dict[ensemble[j][0].a_in] = acts[ine]
             ens_qs.append(self._session.run(ret_dict, feed_dict))
-            # if weights_res is None:
-            #     a = self._session.run(q_res, feed_dict)
-            # else:
-            #     a, b = self._session.run([q_res, weights_res], feed_dict)
 
         #normlize Q values
         norm_q = []
@@ -722,11 +662,6 @@ class DDPGEnsembleNormSoftmaxMin100TQValue(OnlineRun):
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
         return acts[biggest_i], prob
-        # if weights_res is None:
-        #     return acts[biggest_i]
-        # else:
-        #     return acts[biggest_i], b
-
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
                        weights_mounted, ddpgne, cfg_ens, q_critic, batch_size):
@@ -750,11 +685,6 @@ class DDPGEnsembleNormSoftmaxMin100TQValue(OnlineRun):
            train_target_results.append([rew[ii] * cfg_ens[ne]['reward_scale'] + cfg_ens[ne]['gamma'] * train_nextq_results[ne][ii] for ii in range(batch_size)])
 
         # Update critic using target and actor using gradient
-        # print("********************************")
-        # print(obs)
-        # print(act)
-        # print(len(act))
-        # print(train_target_results)
         ddpgne.train(obs, act, train_target_results)
 
         for ne in range(self._num_ensemble):
@@ -804,7 +734,7 @@ class DDPGEnsembleNormSoftmaxMin100TQValue(OnlineRun):
         return q_mounted, target_mounted, td_mounted, w_train, weights_mounted
 
 
-class DDPGEnsembleTarget(OnlineRun):
+class DDPGEnsembleTarget(DDPGPlainEnsemble):
 
 
     def __init__(self, sess, num_ensemble, dbg_weightstderror, print_cvs):
@@ -813,40 +743,6 @@ class DDPGEnsembleTarget(OnlineRun):
         self._dbg_weightstderror = dbg_weightstderror
         self._print_cvs = print_cvs
         print("class DDPG_ensemble")
-
-
-    def get_actions(self, ensemble, sin, obs):
-        act_nodes = [e[0].a_out for e in ensemble]
-        acts =  self._session.run(act_nodes, {sin: obs})
-        return acts
-
-
-    def get_action(self, ensemble, sin, obs, q_res, acts, act_acum, weights=None): #, weights_res=None
-        qss = []
-        for ine in range(self._num_ensemble):
-            feed_dict = {sin: obs}
-            for j in range(self._num_ensemble):
-                feed_dict[ensemble[j][0].a_in] = acts[ine]
-            q_crtc = self._session.run(q_res, feed_dict)
-            # if weights_res is None:
-            #     a = self._session.run(q_res, feed_dict)
-            # else:
-            #     a, b = self._session.run([q_res, weights_res], feed_dict)
-            qss.append(q_crtc)
-
-        biggest_v = qss[0]
-        biggest_i = 0
-        for k in range(self._num_ensemble - 1):
-            if qss[k + 1] > biggest_v:
-                biggest_v = qss[k + 1]
-                biggest_i = k + 1
-        act_acum[biggest_i] = act_acum[biggest_i] + 1
-        return acts[biggest_i]
-        # if weights_res is None:
-        #     return acts[biggest_i]
-        # else:
-        #     return acts[biggest_i], b
-
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
                        weights_mounted, ddpgne, cfg_ens, q_critic, batch_size):
@@ -916,7 +812,7 @@ class DDPGEnsembleTarget(OnlineRun):
         return q_mounted, target_mounted, td_mounted, w_train, weights_mounted
 
 
-class DDPGEnsembleTDTrgt(OnlineRun):
+class DDPGEnsembleTDTrgt(DDPGPlainEnsemble):
 
 
     def __init__(self, sess, num_ensemble, dbg_weightstderror, print_cvs):
@@ -925,37 +821,6 @@ class DDPGEnsembleTDTrgt(OnlineRun):
         self._dbg_weightstderror = dbg_weightstderror
         self._print_cvs = print_cvs
         print("class DDPG_ensemble")
-
-
-    def get_actions(self, ensemble, sin, obs):
-        act_nodes = [e[0].a_out for e in ensemble]
-        acts =  self._session.run(act_nodes, {sin: obs})
-        return acts
-
-
-    def get_action(self, ensemble, sin, obs, q_res, acts, act_acum, weights_res=None):
-        qss = []
-        for ine in range(self._num_ensemble):
-            feed_dict = {sin: obs}
-            for j in range(self._num_ensemble):
-                feed_dict[ensemble[j][0].a_in] = acts[ine]
-            if weights_res is None:
-                a = self._session.run(q_res, feed_dict)
-            else:
-                a, b = self._session.run([q_res, weights_res], feed_dict)
-            qss.append(a)
-
-        biggest_v = qss[0]
-        biggest_i = 0
-        for k in range(self._num_ensemble - 1):
-            if qss[k + 1] > biggest_v:
-                biggest_v = qss[k + 1]
-                biggest_i = k + 1
-        act_acum[biggest_i] = act_acum[biggest_i] + 1
-        if weights_res is None:
-            return acts[biggest_i]
-        else:
-            return acts[biggest_i], b
 
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
