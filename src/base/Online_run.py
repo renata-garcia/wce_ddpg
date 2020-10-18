@@ -471,7 +471,10 @@ class DDPGEnsembleNormSoftmaxMinQValue(OnlineRun):
         for j in range(self._num_ensemble):
             ret_dict.append(ensemble[j][0].q)
 
-        weights = self._session.run(weights, {sin: obs})
+        if not (isinstance(weights, list)):
+            weights = self._session.run(weights, {sin: obs})
+        else:
+            weights = np.hstack(weights)
         for ine in range(self._num_ensemble):
             feed_dict = {sin: obs}
             for j in range(self._num_ensemble):
