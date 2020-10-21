@@ -113,8 +113,8 @@ def run_multi_ddpg():
             temperature = 1 #TODO 0.1 1 10
             if ep%wce_num_ensemble == 0 and (not isObservationTime(memory.size())):
                 addrw_acum_abs = addrw_acum - np.min(addrw_acum)
-                e_x = np.exp(addrw_acum_abs/temperature) #TODO check error
-                rw_weights = e_x / e_x.sum() #TODO check error
+                e_x = np.exp(addrw_acum_abs/(temperature + 1e-10))
+                rw_weights = e_x / (e_x.sum() + 1e-10)
 
         steps_acum = steps_acum + steps_count
         steps_count = 0
