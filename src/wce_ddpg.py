@@ -334,6 +334,9 @@ elif "NormSoftmaxQValue" in typeCriticAggregation:
 elif "NormSoftmaxMinQValue" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[20:]
     online_run = rl.DDPGEnsembleNormSoftmaxMinQValue(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+elif "NormSoftmaxMinMinus10TQValue" in typeCriticAggregation:
+    typeCriticAggregation_ = typeCriticAggregation[28:]
+    online_run = rl.DDPGEnsembleNormSoftmaxMinMinus10TQValue(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 elif "NormSoftmaxMin10TQValue" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[23:]
     online_run = rl.DDPGEnsembleNormSoftmaxMin10TQValue(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
