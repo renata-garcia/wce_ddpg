@@ -354,7 +354,7 @@ class DDPGEnsembleNormSoftmaxQValue(OnlineRun):
             expoent = np.hstack(tmp_iaction)/temp
             norm_q.append(expoent)
             t_exp = np.exp(expoent)
-            norm_q_p = t_exp/np.sum(t_exp)
+            norm_q_p = t_exp/(np.sum(t_exp)+1e-10)
             # if np.isnan(norm_q_p[0]):
                 # print("******************")
 
@@ -499,7 +499,7 @@ class DDPGEnsembleNormSoftmaxMinQValue(OnlineRun):
             exponent = np.hstack(tmp_iaction) - np.min(np.hstack(tmp_iaction))
             norm_q.append(exponent)
             t_exp = np.exp(exponent)
-            norm_q_p = t_exp/np.sum(t_exp)
+            norm_q_p = t_exp/(np.sum(t_exp)+1e-10)
             # if np.isnan(norm_q_p[0]):
                 # print("******************")
 
@@ -642,7 +642,7 @@ class DDPGEnsembleNormSoftmaxMinMinus10TQValue(OnlineRun):
             exponent = np.hstack(tmp_iaction) - np.min(np.hstack(tmp_iaction))
             norm_q.append(exponent)
             t_exp = np.exp(exponent/1e-1)
-            norm_q_p = t_exp/np.sum(t_exp)
+            norm_q_p = t_exp/(np.sum(t_exp)+1e-10)
             # if np.isnan(norm_q_p[0]):
                 # print("******************")
 
@@ -784,7 +784,7 @@ class DDPGEnsembleNormSoftmaxMin10TQValue(OnlineRun):
             exponent = np.hstack(tmp_iaction) - np.min(np.hstack(tmp_iaction))
             norm_q.append(exponent)
             t_exp = np.exp(exponent/1e1)
-            norm_q_p = t_exp/np.sum(t_exp)
+            norm_q_p = t_exp/(np.sum(t_exp)+1e-10)
             # if np.isnan(norm_q_p[0]):
                 # print("******************")
 
@@ -926,7 +926,7 @@ class DDPGEnsembleNormSoftmaxMin100TQValue(OnlineRun):
             exponent = np.hstack(tmp_iaction) - np.min(np.hstack(tmp_iaction))
             norm_q.append(exponent)
             t_exp = np.exp(exponent/1e2)
-            norm_q_p = t_exp/np.sum(t_exp)
+            norm_q_p = t_exp/(np.sum(t_exp)+1e-10)
             # if np.isnan(norm_q_p[0]):
                 # print("******************")
 
@@ -1068,7 +1068,7 @@ class DDPGEnsembleNormSoftmaxMin1000TQValue(OnlineRun):
             exponent = np.hstack(tmp_iaction) - np.min(np.hstack(tmp_iaction))
             norm_q.append(exponent)
             t_exp = np.exp(exponent/1e3)
-            norm_q_p = t_exp/np.sum(t_exp)
+            norm_q_p = t_exp/(np.sum(t_exp)+1e-10)
             # if np.isnan(norm_q_p[0]):
                 # print("******************")
 
