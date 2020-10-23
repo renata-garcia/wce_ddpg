@@ -655,10 +655,11 @@ class DDPGEnsembleNormSoftmaxMinMinus10TQValue(OnlineRun):
         # **q(0)(0)** q(1)(0) q(2)(0)
         # **q(0)(1)** q(1)(1) q(2)(1)
         # **q(0)(2)** q(1)(2) q(2)(2)
-        for iq in range(self._num_ensemble):
+        # ok: name variable for iteration
+        for i_act in range(self._num_ensemble):
             tmp_qs = []
-            for i_act in range(self._num_ensemble):
-                tmp_qs.append(norm_ens_qs[i_act][iq])
+            for iq in range(self._num_ensemble):
+                tmp_qs.append(norm_ens_qs[iq][i_act])
             norm_qss.append(np.sum(tmp_qs*weights))
 
         biggest_v = norm_qss[0]
