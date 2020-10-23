@@ -136,7 +136,7 @@ def run_multi_ddpg():
             tmp_ensemble = getattr(getattr(online_run, "_agent"), "_ensemble")
             if test:
                 acts = online_run.get_actions(tmp_ensemble, sin, [observation])
-                action_arr, prob = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum, getattr(online_run, "_value_function").weights) #, getattr(online_run, "_value_function").weights
+                action_arr, prob, test_weights = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum, getattr(online_run, "_value_function").weights) #, getattr(online_run, "_value_function").weights
                 action = action_arr[0]
 
                 mean_acts = np.mean(acts)
@@ -160,13 +160,15 @@ def run_multi_ddpg():
                     action = online_run.get_policy_action(tmp_ensemble[int(random.random() * wce_num_ensemble)], sin, [observation])[0]
                 else:
                     acts = online_run.get_actions(tmp_ensemble, sin, [observation])
-                    action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum, getattr(online_run, "_value_function").weights)[0]
+                    action_arr, prob, test_weights = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum, getattr(online_run, "_value_function").weights)
+                    action = action_arr[0]
             elif (itmode == IterationMode.policy_persistent_random_weighted) or (itmode == IterationMode.policy_persistent_random_weighted_by_return): #TODO choose by steps (not persistent)
                 if (online_iteration_and_random_weighted_mode): #rnd_not_policy_persistent_random_weighted # TODO decide which policy to use for all steps, in episode
                     action = online_run.get_policy_action(tmp_ensemble[policy_chosen], sin, [observation])[0]
                 else:
                     acts = online_run.get_actions(tmp_ensemble, sin, [observation])
-                    action = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum, getattr(online_run, "_value_function").weights)[0]
+                    action_arr, prob, test_weights = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum, getattr(online_run, "_value_function").weights)
+                    action = action_arr[0]
             else:
                 action = online_run.get_policy_action(tmp_ensemble[policy_chosen], sin, [observation])[0]
 
@@ -266,6 +268,9 @@ def run_multi_ddpg():
                 else:
                     for ipb in range(wce_num_ensemble*wce_num_ensemble):
                         log = log + "\t0.0"
+
+                for itw in range(wce_num_ensemble):
+                    log = log + "\t%0.07f" % test_weights[itw]
 
                 file_output = open("../" + file_name, "a")
                 file_output.write(log + "\n")

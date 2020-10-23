@@ -64,11 +64,12 @@ class DDPGPlainEnsemble(OnlineRun):
             for j in range(self._num_ensemble):
                 feed_dict[ensemble[j][0].a_in] = acts[ine]
             q_crtc = self._session.run(q_res, feed_dict)
-            # if weights_res is None:
-            #     a = self._session.run(q_res, feed_dict)
-            # else:
-            #     a, b = self._session.run([q_res, weights_res], feed_dict)
             qss.append(q_crtc)
+
+        if not (isinstance(weights, list)):
+            weights = self._session.run(weights, {sin: obs})
+        else:
+            weights = np.hstack(weights)
 
         norm_q.append(qss)
 
@@ -80,11 +81,7 @@ class DDPGPlainEnsemble(OnlineRun):
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
 
-        return acts[biggest_i], [[0]]
-        # if weights_res is None:
-        #     return acts[biggest_i]
-        # else:
-        #     return acts[biggest_i], b
+        return acts[biggest_i], [[0]], weights
 
 class DDPGEnsemble(DDPGPlainEnsemble):
 
@@ -188,7 +185,10 @@ class DDPGEnsembleNormV2QValue(OnlineRun):
         for j in range(self._num_ensemble):
             ret_dict.append(ensemble[j][0].q)
 
-        weights = self._session.run(weights, {sin: obs})
+        if not (isinstance(weights, list)):
+            weights = self._session.run(weights, {sin: obs})
+        else:
+            weights = np.hstack(weights)
         for ine in range(self._num_ensemble):
             feed_dict = {sin: obs}
             for j in range(self._num_ensemble):
@@ -222,7 +222,7 @@ class DDPGEnsembleNormV2QValue(OnlineRun):
                 biggest_v = norm_qss[k + 1]
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
-        return acts[biggest_i], [[0]]
+        return acts[biggest_i], [[0]], weights
 
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
@@ -319,7 +319,10 @@ class DDPGEnsembleNormSoftmaxQValue(OnlineRun):
         for j in range(self._num_ensemble):
             ret_dict.append(ensemble[j][0].q)
 
-        weights = self._session.run(weights, {sin: obs})
+        if not (isinstance(weights, list)):
+            weights = self._session.run(weights, {sin: obs})
+        else:
+            weights = np.hstack(weights)
         for ine in range(self._num_ensemble):
             feed_dict = {sin: obs}
             for j in range(self._num_ensemble):
@@ -379,7 +382,7 @@ class DDPGEnsembleNormSoftmaxQValue(OnlineRun):
                 biggest_v = norm_qss[k + 1]
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
-        return acts[biggest_i], prob
+        return acts[biggest_i], prob, weights
 
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
@@ -496,7 +499,7 @@ class DDPGEnsembleNormSoftmaxMinQValue(OnlineRun):
             # 1 - e ^ {-10*x}
             for i_act in range(self._num_ensemble):
                 tmp_iaction.append(ens_qs[i_act][iq][0])
-            exponent = np.hstack(tmp_iaction) - np.min(np.hstack(tmp_iaction))
+            exponent = np.hstack(tmp_iaction) - np.max(np.hstack(tmp_iaction))
             norm_q.append(exponent)
             t_exp = np.exp(exponent)
             norm_q_p = t_exp/(np.sum(t_exp)+1e-10)
@@ -525,7 +528,7 @@ class DDPGEnsembleNormSoftmaxMinQValue(OnlineRun):
                 biggest_v = norm_qss[k + 1]
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
-        return acts[biggest_i], prob
+        return acts[biggest_i], prob, weights
 
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
@@ -617,7 +620,11 @@ class DDPGEnsembleNormSoftmaxMinMinus10TQValue(OnlineRun):
         for j in range(self._num_ensemble):
             ret_dict.append(ensemble[j][0].q)
 
-        weights = self._session.run(weights, {sin: obs})
+
+        if not (isinstance(weights, list)):
+            weights = self._session.run(weights, {sin: obs})
+        else:
+            weights = np.hstack(weights)
         for ine in range(self._num_ensemble):
             feed_dict = {sin: obs}
             for j in range(self._num_ensemble):
@@ -639,7 +646,7 @@ class DDPGEnsembleNormSoftmaxMinMinus10TQValue(OnlineRun):
             # 1 - e ^ {-10*x}
             for i_act in range(self._num_ensemble):
                 tmp_iaction.append(ens_qs[i_act][iq][0])
-            exponent = np.hstack(tmp_iaction) - np.min(np.hstack(tmp_iaction))
+            exponent = np.hstack(tmp_iaction) - np.max(np.hstack(tmp_iaction))
             norm_q.append(exponent)
             t_exp = np.exp(exponent/1e-1)
             norm_q_p = t_exp/(np.sum(t_exp)+1e-10)
@@ -669,7 +676,7 @@ class DDPGEnsembleNormSoftmaxMinMinus10TQValue(OnlineRun):
                 biggest_v = norm_qss[k + 1]
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
-        return acts[biggest_i], prob
+        return acts[biggest_i], prob, weights
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
                        weights_mounted, ddpgne, cfg_ens, q_critic, batch_size):
@@ -760,7 +767,10 @@ class DDPGEnsembleNormSoftmaxMin10TQValue(OnlineRun):
         for j in range(self._num_ensemble):
             ret_dict.append(ensemble[j][0].q)
 
-        weights = self._session.run(weights, {sin: obs})
+        if not (isinstance(weights, list)):
+            weights = self._session.run(weights, {sin: obs})
+        else:
+            weights = np.hstack(weights)
         for ine in range(self._num_ensemble):
             feed_dict = {sin: obs}
             for j in range(self._num_ensemble):
@@ -782,7 +792,7 @@ class DDPGEnsembleNormSoftmaxMin10TQValue(OnlineRun):
             # 1 - e ^ {-10*x}
             for i_act in range(self._num_ensemble):
                 tmp_iaction.append(ens_qs[i_act][iq][0])
-            exponent = np.hstack(tmp_iaction) - np.min(np.hstack(tmp_iaction))
+            exponent = np.hstack(tmp_iaction) - np.max(np.hstack(tmp_iaction))
             norm_q.append(exponent)
             t_exp = np.exp(exponent/1e1)
             norm_q_p = t_exp/(np.sum(t_exp)+1e-10)
@@ -811,7 +821,7 @@ class DDPGEnsembleNormSoftmaxMin10TQValue(OnlineRun):
                 biggest_v = norm_qss[k + 1]
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
-        return acts[biggest_i], prob
+        return acts[biggest_i], prob, weights
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
                        weights_mounted, ddpgne, cfg_ens, q_critic, batch_size):
@@ -902,7 +912,10 @@ class DDPGEnsembleNormSoftmaxMin100TQValue(OnlineRun):
         for j in range(self._num_ensemble):
             ret_dict.append(ensemble[j][0].q)
 
-        weights = self._session.run(weights, {sin: obs})
+        if not (isinstance(weights, list)):
+            weights = self._session.run(weights, {sin: obs})
+        else:
+            weights = np.hstack(weights)
         for ine in range(self._num_ensemble):
             feed_dict = {sin: obs}
             for j in range(self._num_ensemble):
@@ -924,7 +937,7 @@ class DDPGEnsembleNormSoftmaxMin100TQValue(OnlineRun):
             # 1 - e ^ {-10*x}
             for i_act in range(self._num_ensemble):
                 tmp_iaction.append(ens_qs[i_act][iq][0])
-            exponent = np.hstack(tmp_iaction) - np.min(np.hstack(tmp_iaction))
+            exponent = np.hstack(tmp_iaction) - np.max(np.hstack(tmp_iaction))
             norm_q.append(exponent)
             t_exp = np.exp(exponent/1e2)
             norm_q_p = t_exp/(np.sum(t_exp)+1e-10)
@@ -953,7 +966,7 @@ class DDPGEnsembleNormSoftmaxMin100TQValue(OnlineRun):
                 biggest_v = norm_qss[k + 1]
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
-        return acts[biggest_i], prob
+        return acts[biggest_i], prob, weights
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
                        weights_mounted, ddpgne, cfg_ens, q_critic, batch_size):
@@ -1044,7 +1057,10 @@ class DDPGEnsembleNormSoftmaxMin1000TQValue(OnlineRun):
         for j in range(self._num_ensemble):
             ret_dict.append(ensemble[j][0].q)
 
-        weights = self._session.run(weights, {sin: obs})
+        if not (isinstance(weights, list)):
+            weights = self._session.run(weights, {sin: obs})
+        else:
+            weights = np.hstack(weights)
         for ine in range(self._num_ensemble):
             feed_dict = {sin: obs}
             for j in range(self._num_ensemble):
@@ -1066,7 +1082,7 @@ class DDPGEnsembleNormSoftmaxMin1000TQValue(OnlineRun):
             # 1 - e ^ {-10*x}
             for i_act in range(self._num_ensemble):
                 tmp_iaction.append(ens_qs[i_act][iq][0])
-            exponent = np.hstack(tmp_iaction) - np.min(np.hstack(tmp_iaction))
+            exponent = np.hstack(tmp_iaction) - np.max(np.hstack(tmp_iaction))
             norm_q.append(exponent)
             t_exp = np.exp(exponent/1e3)
             norm_q_p = t_exp/(np.sum(t_exp)+1e-10)
@@ -1095,7 +1111,7 @@ class DDPGEnsembleNormSoftmaxMin1000TQValue(OnlineRun):
                 biggest_v = norm_qss[k + 1]
                 biggest_i = k + 1
         act_acum[biggest_i] = act_acum[biggest_i] + 1
-        return acts[biggest_i], prob
+        return acts[biggest_i], prob, weights
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
                        weights_mounted, ddpgne, cfg_ens, q_critic, batch_size):
