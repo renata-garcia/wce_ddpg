@@ -118,7 +118,7 @@ class  WCE_config:
             env = Environments('Gym-Humanoid-v2')
             steps_p_ep = 1000
             print(name_print, "Gym-Humanoid-v2")
-        elif "_ant_" in file_yaml:
+        elif "_ant" in file_yaml:
             env = Environments('Gym-Ant-v2')
             steps_p_ep = 1000
             print(name_print, "Gym-Ant-v2")
