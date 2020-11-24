@@ -11,7 +11,7 @@ class Environments(): #TODO separe files and use design patterns
   def __init__(self, id):
     self._id = id
     self._env = 0
-    print("class Environments")
+    print("class Environments.py")
 
     if id == "GrlEnv-Pendulum-v0":
       register(
@@ -81,8 +81,16 @@ class Environments(): #TODO separe files and use design patterns
       )
       print("register")
       self._env =  gym.make("Ant-v2")
+    elif id == "Gym-Swimmer-v2":
+      register(
+        id=id,
+        entry_point='grlenv.grlenv:GrlEnv',
+        kwargs={"file": "../cfg/swimmer.yaml"}
+      )
+      print("register")
+      self._env =  gym.make("Swimmer-v2")
     else:
-      print("Environments wrong id===========================")
+      print("Environments.py wrong id===========================")
       exit(-1)
     print("id")
     print(id)

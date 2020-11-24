@@ -122,12 +122,15 @@ class  WCE_config:
             env = Environments('Gym-Ant-v2')
             steps_p_ep = 1000
             print(name_print, "Gym-Ant-v2")
+        elif "_sw_" in file_yaml:
+            env = Environments('Gym-Swimmer-v2')
+            steps_p_ep = 1000
+            print(name_print, "Gym-Swimmer-v2")
         else:
+            print("no env")
             print(name_print, file_yaml)
             exit(-1)
         return env, steps_p_ep
-
-
 
 
 class IterationMode:

@@ -1,0 +1,4 @@
+environment:
+  type: environment/gym
+  id: Swimmer-v2
+  render: 0
