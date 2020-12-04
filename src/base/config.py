@@ -126,6 +126,10 @@ class  WCE_config:
             env = Environments('Gym-Swimmer-v2')
             steps_p_ep = 1000
             print(name_print, "Gym-Swimmer-v2")
+        elif "_wk_" in file_yaml:
+            env = Environments('Gym-Walker2d-v2')
+            steps_p_ep = 1000
+            print(name_print, "Gym-Walker2d-v2")
         else:
             print("no env")
             print(name_print, file_yaml)

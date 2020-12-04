@@ -1,0 +1,4 @@
+environment:
+  type: environment/gym
+  id: Walker2d-v2
+  render: 0

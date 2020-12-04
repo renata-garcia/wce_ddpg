@@ -89,6 +89,14 @@ class Environments(): #TODO separe files and use design patterns
       )
       print("register")
       self._env =  gym.make("Swimmer-v2")
+    elif id == "Gym-Walker2d-v2":
+      register(
+        id=id,
+        entry_point='grlenv.grlenv:GrlEnv',
+        kwargs={"file": "../cfg/walker.yaml"}
+      )
+      print("register")
+      self._env =  gym.make("Walker2d-v2")
     else:
       print("Environments.py wrong id===========================")
       exit(-1)
