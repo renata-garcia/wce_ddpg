@@ -208,6 +208,7 @@ def run_multi_ddpg():
             if done:
                 break
         if test:
+            # ep, steps_acum, episode_reward, #weights_mounted #td_mounted_t #target_mounted_t #q_mounted_t
             if ep > 1:
                 log = "%d\t%d\t%0.1f"\
                       % (ep, steps_acum, episode_reward)
