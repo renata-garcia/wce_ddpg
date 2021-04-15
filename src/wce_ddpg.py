@@ -355,6 +355,9 @@ elif "NormSoftmaxMin1000TQValue" in typeCriticAggregation:
 elif "NormV2QValue" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[12:]
     online_run = rl.DDPGEnsembleNormV2QValue(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+elif "RSCriticTrain" in typeCriticAggregation:
+    typeCriticAggregation_ = typeCriticAggregation[13:]
+    online_run = rl.DDPGEnsembleRSCriticTrain(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 else:
     typeCriticAggregation_ = typeCriticAggregation
     online_run = rl.DDPGEnsemble(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
