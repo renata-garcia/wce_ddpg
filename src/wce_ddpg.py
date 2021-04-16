@@ -355,12 +355,18 @@ elif "NormSoftmaxMin1000TQValue" in typeCriticAggregation:
 elif "NormV2QValue" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[12:]
     online_run = rl.DDPGEnsembleNormV2QValue(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
-elif "RSCriticTrain" in typeCriticAggregation:
+elif "RSCriticTrain" in typeCriticAggregation: #train(w/ reward_scale); train_critic(norm_1/rs_i); get_action(plain)
     typeCriticAggregation_ = typeCriticAggregation[13:]
     online_run = rl.DDPGEnsembleRSCriticTrain(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
-elif "NormSoftmaxRSCritic" in typeCriticAggregation:
+elif "NormSoftmaxRSCritic" in typeCriticAggregation: #train(w/ reward_scale); train_critic(norm_td_1/rs_i); get_action(softmax)
     typeCriticAggregation_ = typeCriticAggregation[19:]
     online_run = rl.DDPGEnsembleNormSoftmaxRSCritic(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+elif "RSCriticEtaAction" in typeCriticAggregation: #train(w/ reward_scale); train_critic(norm_1/rs_i); get_action(norm_q_1/rs_i)
+    typeCriticAggregation_ = typeCriticAggregation[17:]
+    online_run = rl.DDPGEnsembleRSCriticEtaAction(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+elif "NormSoftmaxRSEtaCritic" in typeCriticAggregation: #train(w/ reward_scale); train_critic(norm_1/rs_i); get_action(softmax_of_norm_q_1/rs_i)
+    typeCriticAggregation_ = typeCriticAggregation[22:]
+    online_run = rl.DDPGEnsembleNormSoftmaxRSEtaCritic(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 else:
     typeCriticAggregation_ = typeCriticAggregation
     online_run = rl.DDPGEnsemble(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
