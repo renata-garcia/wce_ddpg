@@ -1704,8 +1704,8 @@ class DDPGEnsembleTarget(DDPGPlainEnsemble):
         # Calculate Q value of next state
         train_q_results = ddpgne.get_value(0, obs, np.vstack(act))  # using minibatch action
         acts = self.get_actions(getattr(ddpgne, "_ensemble"), getattr(ddpgne, "_sin"), nobs) #ok
-        action = self.get_action(getattr(ddpgne, "_ensemble"), getattr(ddpgne, "_sin"), nobs, q_critic.q_critic, acts, np.zeros(self._num_ensemble))
-        train_nextq_results = ddpgne.get_value(1, nobs, np.vstack(action))  # get_all_actions_target_network(nobs)
+        action = self.get_action(getattr(ddpgne, "_ensemble"), getattr(ddpgne, "_sin"), nobs, q_critic.q_critic, acts, np.zeros(self._num_ensemble), q_critic.weights)
+        train_nextq_results = ddpgne.get_value(1, nobs, np.vstack(action[0]))  # get_all_actions_target_network(nobs)
 
         # Calculate target using SARSA
         train_target_results = []
@@ -1787,8 +1787,8 @@ class DDPGEnsembleTDTrgt(DDPGPlainEnsemble):
 
         train_q_results_tdclc = ddpgne.get_value(0, obs, np.vstack(act))  # using minibatch action
         acts_tdclc = self.get_actions(getattr(ddpgne, "_ensemble"), getattr(ddpgne, "_sin"), nobs) #ok
-        action_tdclc = self.get_action(getattr(ddpgne, "_ensemble"), getattr(ddpgne, "_sin"), nobs, q_critic.q_critic, acts_tdclc, np.zeros(self._num_ensemble))
-        train_nextq_results_tdclc = ddpgne.get_value(1, nobs, np.vstack(action_tdclc))  # get_all_actions_target_network(nobs)
+        action_tdclc = self.get_action(getattr(ddpgne, "_ensemble"), getattr(ddpgne, "_sin"), nobs, q_critic.q_critic, acts_tdclc, np.zeros(self._num_ensemble), q_critic.weights)
+        train_nextq_results_tdclc = ddpgne.get_value(1, nobs, np.vstack(action_tdclc[0]))  # get_all_actions_target_network(nobs)
 
         # Calculate target using SARSA
         train_target_results = []
