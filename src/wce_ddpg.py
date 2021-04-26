@@ -27,6 +27,9 @@ import numpy as np
 import pandas as pd
 import base.Online_run as rl
 
+from base.DDPGEnsembleTargetSoftmaxQ import DDPGEnsembleTargetSoftmaxQ
+from base.DDPGEnsembleTargetUpdateToCritic import DDPGEnsembleTargetUpdateToCritic
+
 from DDPGNetworkEnsemble import  DDPGNetworkEnsemble
 from DDPGNetwork import  DDPGNetwork
 from DDPGNetworkNode import  DDPGNetworkNode
@@ -331,6 +334,12 @@ print("# Set up DDPG Single or Ensemble")
 if "Target" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[6:]
     online_run = rl.DDPGEnsembleTarget(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+elif "TrgtSoftmaxQ" in typeCriticAggregation:
+    typeCriticAggregation_ = typeCriticAggregation[12:]
+    online_run = DDPGEnsembleTargetSoftmaxQ(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+elif "TrgtUpdateToCritic" in typeCriticAggregation:
+    typeCriticAggregation_ = typeCriticAggregation[18:]
+    online_run = DDPGEnsembleTargetUpdateToCritic(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 elif "TDTrgt" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[6:]
     online_run = rl.DDPGEnsembleTDTrgt(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
