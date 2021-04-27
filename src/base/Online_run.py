@@ -107,7 +107,8 @@ class DDPGEnsemble(DDPGPlainEnsemble):
         # acts = self.get_actions(getattr(ddpgne, "_ensemble"), getattr(ddpgne, "_sin"), nobs) #ok
         # action = self.get_action(getattr(ddpgne, "_ensemble"), getattr(ddpgne, "_sin"), nobs, q_critic.q_critic, acts, np.zeros(self._num_ensemble))
         # train_nextq_results = ddpgne.get_value(1, nobs, action)  # get_all_actions_target_network(nobs)
-        # # nextq = max(ensemble_q_values_target_network(nobs, actions))
+        # # nextq = max(ensemble_q_values_target_ne
+        # twork(nobs, actions))
 
         # Calculate target using SARSA
         train_target_results = []

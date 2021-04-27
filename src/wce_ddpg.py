@@ -29,6 +29,7 @@ import base.Online_run as rl
 
 from base.DDPGEnsembleTargetSoftmaxQ import DDPGEnsembleTargetSoftmaxQ
 from base.DDPGEnsembleTargetUpdateToCritic import DDPGEnsembleTargetUpdateToCritic
+from base.DDPGEnsembleTargetUpdateToCriticSoftmaxQ import DDPGEnsembleTargetUpdateToCriticSoftmaxQ
 
 from DDPGNetworkEnsemble import  DDPGNetworkEnsemble
 from DDPGNetwork import  DDPGNetwork
@@ -340,6 +341,9 @@ elif "TrgtSoftmaxQ" in typeCriticAggregation:
 elif "TrgtUpdateToCritic" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[18:]
     online_run = DDPGEnsembleTargetUpdateToCritic(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+elif "TrgtSoftQUpdateToCritic" in typeCriticAggregation:
+    typeCriticAggregation_ = typeCriticAggregation[23:]
+    online_run = DDPGEnsembleTargetUpdateToCriticSoftmaxQ(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 elif "TDTrgt" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[6:]
     online_run = rl.DDPGEnsembleTDTrgt(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
