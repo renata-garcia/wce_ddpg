@@ -3,10 +3,11 @@
 import numpy as np
 
 from base.Online_run import DDPGPlainEnsemble
+from base.Online_run import DDPGPSoftmaxQEnsemble
 
 # train(w/ reward_scale); train_critic(norm_td_1/rs_i) AS TargetTDError; get_action(softmax)
 
-class DDPGEnsembleTargetUpdateInvRSToCriticSoftmaxQ(DDPGPlainEnsemble):
+class DDPGEnsembleTargetUpdateInvRSToCriticSoftmaxQ(DDPGPSoftmaxQEnsemble):
 
 
     def __init__(self, sess, num_ensemble, dbg_weightstderror, print_cvs):
@@ -15,70 +16,6 @@ class DDPGEnsembleTargetUpdateInvRSToCriticSoftmaxQ(DDPGPlainEnsemble):
         self._dbg_weightstderror = dbg_weightstderror
         self._print_cvs = print_cvs
         print("class DDPGEnsembleTargetUpdateInvRSToCriticSoftmaxQ")
-
-
-    def get_action(self, ensemble, sin, obs, q_res, acts, act_acum, weights): #, weights_res=None
-        prob = []
-        ens_qs = []
-        ret_dict = []
-        for j in range(self._num_ensemble):
-            ret_dict.append(ensemble[j][0].q)
-
-        if not (isinstance(weights, list)):
-            weights = self._session.run(weights, {sin: obs})
-        else:
-            weights = np.hstack(weights)
-        for ine in range(self._num_ensemble):
-            feed_dict = {sin: obs}
-            for j in range(self._num_ensemble):
-                feed_dict[ensemble[j][0].a_in] = acts[ine]
-            ens_qs.append(self._session.run(ret_dict, feed_dict))
-
-        #normlize Q values
-        norm_q = []
-        norm_ens_qs = []
-        norm_qss = []
-
-        # q[iq,a_0] q[iq,a_1] q[iq,a_2]
-        # q(act)(iq) q(act)(iq) q(act)(iq)
-        # **q(0)(0)** q(0)(1) q(0)(2)
-        # **q(1)(0)** q(1)(1) q(1)(2)
-        # **q(2)(0)** q(2)(1) q(2)(2)
-        for iq in range(self._num_ensemble):
-            tmp_iaction = []
-            # 1 - e ^ {-10*x}
-            for i_act in range(self._num_ensemble):
-                tmp_iaction.append(ens_qs[i_act][iq][0])
-            exponent = np.hstack(tmp_iaction) - np.max(np.hstack(tmp_iaction))
-            norm_q.append(exponent)
-            t_exp = np.exp(exponent)
-            norm_q_p = t_exp/(np.sum(t_exp)+1e-10)
-            # if np.isnan(norm_q_p[0]):
-                # print("******************")
-
-            norm_ens_qs.append(norm_q_p)
-
-        prob.append(norm_q)
-
-        # q[act,iq_0] q[act,iq_1] q[act,iq_2]
-        # q(act)(iq) q(act)(iq) q(act)(iq)
-        # **q(0)(0)** q(1)(0) q(2)(0)
-        # **q(0)(1)** q(1)(1) q(2)(1)
-        # **q(0)(2)** q(1)(2) q(2)(2)
-        for iq in range(self._num_ensemble):
-            tmp_qs = []
-            for i_act in range(self._num_ensemble):
-                tmp_qs.append(norm_ens_qs[i_act][iq])
-            norm_qss.append(np.sum(tmp_qs*weights))
-
-        biggest_v = norm_qss[0]
-        biggest_i = 0
-        for k in range(self._num_ensemble - 1):
-            if norm_qss[k + 1] > biggest_v:
-                biggest_v = norm_qss[k + 1]
-                biggest_i = k + 1
-        act_acum[biggest_i] = act_acum[biggest_i] + 1
-        return acts[biggest_i], prob, weights
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
                        weights_mounted, ddpgne, cfg_ens, q_critic, batch_size):

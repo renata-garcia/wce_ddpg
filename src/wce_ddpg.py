@@ -28,9 +28,13 @@ import pandas as pd
 import base.Online_run as rl
 
 from base.DDPGEnsembleTargetSoftmaxQ import DDPGEnsembleTargetSoftmaxQ
-from base.DDPGEnsembleTargetUpdateToCritic import DDPGEnsembleTargetUpdateToCritic
-from base.DDPGEnsembleTargetUpdateToCriticSoftmaxQ import DDPGEnsembleTargetUpdateToCriticSoftmaxQ
+from base.DDPGEnsembleTargetUpdateToCritic import DDPGEnsembleTargetUpdateToCriticPlain
+from base.DDPGEnsembleTargetUpdateToCritic import DDPGEnsembleTargetUpdateToCriticSoftmaxQ
 from base.DDPGEnsembleTargetUpdateInvRSToCriticSoftmaxQ import DDPGEnsembleTargetUpdateInvRSToCriticSoftmaxQ
+from base.DDPGEnsembleTDTrgt import DDPGEnsembleTDTrgt
+from base.DDPGEnsembleTarget import DDPGEnsembleTarget
+from base.DDPGEnsemble import DDPGEnsemble
+from base.DDPGEnsembleTD import DDPGEnsembleTD
 
 from DDPGNetworkEnsemble import  DDPGNetworkEnsemble
 from DDPGNetwork import  DDPGNetwork
@@ -75,6 +79,7 @@ def run_multi_ddpg():
 
     for ep in range(episodes):
 
+        # print("wce_ddpg.py::ep::", ep)
         act_acum = np.zeros(wce_num_ensemble)
 
         itmode = int(iteration_mode)
@@ -83,10 +88,13 @@ def run_multi_ddpg():
             online_iteration_and_random_weighted_mode = 1
         else:
             online_iteration_and_random_weighted_mode = 0
+        # print("wce_ddpg.py::online_iteration_and_random_weighted_mode::", online_iteration_and_random_weighted_mode)
         if itmode == IterationMode.alternately_persistent:
             policy_chosen = (ep % wce_num_ensemble)
+            # print("wce_ddpg.py::IterationMode.alternately_persistent::", policy_chosen)
         elif itmode == IterationMode.random:
             policy_chosen = int(num_rnd * wce_num_ensemble)
+            # print("wce_ddpg.py::IterationMode.random::", policy_chosen)
         elif itmode == IterationMode.random_weighted or itmode == IterationMode.policy_persistent_random_weighted: #random weighted not persistent (prob = 0.50); case not ensemble action
             chosen_arrow = num_rnd
             sum_w_pol = 0
@@ -97,8 +105,10 @@ def run_multi_ddpg():
                     policy_chosen += 1
                 else:
                    break
+            # print("wce_ddpg.py::IterationMode.random_weighted or IterationMode.policy_persistent_random_weighted::policy_chosen=", policy_chosen)
         elif itmode == IterationMode.online:
             online_iteration_mode = 1
+            # print("wce_ddpg.py::IterationMode.online::")
         elif (itmode == IterationMode.random_weighted_by_return) or (itmode == IterationMode.policy_persistent_random_weighted_by_return): #policy persistent random weighted by return
             chosen_arrow = num_rnd
             sum_w_pol = 0
@@ -109,6 +119,7 @@ def run_multi_ddpg():
                     policy_chosen += 1
                 else:
                     break
+            # print("wce_ddpg.py::IterationMode.random_weighted_by_return or IterationMode.policy_persistent_random_weighted_by_return::", policy_chosen)
         else:
             print("wce_ddpg.py::iteration_mode::", iteration_mode)
             exit(-1)
@@ -147,6 +158,7 @@ def run_multi_ddpg():
                 mean_acts = np.mean(acts)
                 dist_acts = acts - mean_acts
                 dist_acts_ens = acts - action  # TODO printing
+                # print("wce_ddpg.py::if_test::", steps_count)
 
                 if isInitialOfEpisode(steps_count):
                     dist_acts_mounted = abs(dist_acts)
@@ -167,14 +179,18 @@ def run_multi_ddpg():
                     acts = online_run.get_actions(tmp_ensemble, sin, [observation])
                     action_arr, prob, test_weights = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum, getattr(online_run, "_value_function").weights)
                     action = action_arr[0]
+                # print("wce_ddpg.py::online_iteration_mode::")
             elif (itmode == IterationMode.policy_persistent_random_weighted) or (itmode == IterationMode.policy_persistent_random_weighted_by_return): #TODO choose by steps (not persistent)
                 if (online_iteration_and_random_weighted_mode): #rnd_not_policy_persistent_random_weighted # TODO decide which policy to use for all steps, in episode
                     action = online_run.get_policy_action(tmp_ensemble[policy_chosen], sin, [observation])[0]
+                    # print("wce_ddpg.py::policy_persistent_random_weighted::policy_chosen=", policy_chosen)
                 else:
+                    # print("wce_ddpg.py::online_iteration_mode::")
                     acts = online_run.get_actions(tmp_ensemble, sin, [observation])
                     action_arr, prob, test_weights = online_run.get_action(tmp_ensemble, sin, [observation], getattr(online_run, "_value_function").q_critic, acts, act_acum, getattr(online_run, "_value_function").weights)
                     action = action_arr[0]
             else:
+                # print("wce_ddpg.py::ELSE::online_run.get_policy_action(tmp_ensemble[policy_chosen], sin, [observation])[0]")
                 action = online_run.get_policy_action(tmp_ensemble[policy_chosen], sin, [observation])[0]
 
 
@@ -335,19 +351,19 @@ print("# Set up DDPG Single or Ensemble")
 
 if "Target" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[6:]
-    online_run = rl.DDPGEnsembleTarget(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+    online_run = DDPGEnsembleTarget(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 elif "TrgtSoftmaxQ" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[12:]
     online_run = DDPGEnsembleTargetSoftmaxQ(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 elif "TrgtUpdateToCritic" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[18:]
-    online_run = DDPGEnsembleTargetUpdateToCritic(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+    online_run = DDPGEnsembleTargetUpdateToCriticPlain(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 elif "TrgtSoftQUpdateToCritic" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[23:]
     online_run = DDPGEnsembleTargetUpdateToCriticSoftmaxQ(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 elif "TDTrgt" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[6:]
-    online_run = rl.DDPGEnsembleTDTrgt(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+    online_run = DDPGEnsembleTDTrgt(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 elif "NormSoftmaxQValue" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[17:]
     online_run = rl.DDPGEnsembleNormSoftmaxQValue(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
@@ -369,9 +385,12 @@ elif "NormSoftmaxRSEtaCritic" in typeCriticAggregation: #train(w/ reward_scale);
 elif "TrgtUpdateSoftmaxQInvRSCritic" in typeCriticAggregation: # train(w/ reward_scale); train_critic(norm_td_1/rs_i) AS TargetTDError; get_action(softmax)
     typeCriticAggregation_ = typeCriticAggregation[29:]
     online_run = DDPGEnsembleTargetUpdateInvRSToCriticSoftmaxQ(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+elif "TDbyMiniBatchError" in typeCriticAggregation:
+    typeCriticAggregation_ = typeCriticAggregation[18:]
+    online_run = DDPGEnsembleTD(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 else:
     typeCriticAggregation_ = typeCriticAggregation
-    online_run = rl.DDPGEnsemble(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+    online_run = DDPGEnsemble(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 
 setattr(online_run, "_agent", DDPGNetworkEnsemble(session, sin, getattr(cfg_yaml, "_cfg_ens"),
                                                                   env._env.action_space.shape[0],

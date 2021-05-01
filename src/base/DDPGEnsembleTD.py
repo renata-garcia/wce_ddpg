@@ -1,40 +1,36 @@
-#FILE=base/DDPGEnsembleTargetUpdateToCritic.py; rm $FILE; touch $FILE; chmod 755 $FILE; nano $FILE
+#FILE=base/DDPGEnsembleTD.py; rm $FILE; touch $FILE; chmod 755 $FILE; nano $FILE
 
 import numpy as np
-from base.Online_run import DDPGPlainEnsemble
-from base.Online_run import DDPGPSoftmaxQEnsemble
 
-class DDPGEnsembleTargetUpdateToCritic:
+from base.Online_run import DDPGPlainEnsemble
+
+class DDPGEnsembleTD(DDPGPlainEnsemble):
+
 
     def __init__(self, sess, num_ensemble, dbg_weightstderror, print_cvs):
         self._session = sess
         self._num_ensemble = num_ensemble
         self._dbg_weightstderror = dbg_weightstderror
         self._print_cvs = print_cvs
-        print("class DDPGEnsembleTargetUpdateToCritic")
+        print("class DDPGEnsembleTD")
+
 
     def train(self, act, addrw_mounted, ep, file_name, nobs, obs, rew, reward, steps_count,
                        weights_mounted, ddpgne, cfg_ens, q_critic, batch_size):
         ## TRAIN ACTOR CRITIC
         td_mounted = []
         q_mounted = []
-        td_critic_mounted = []
         target_mounted = []
 
         # Calculate Q value of next state
         train_q_results = ddpgne.get_value(0, obs, np.vstack(act))  # using minibatch action
-        train_nextq_plain_results = ddpgne.get_value(1, nobs)  # TODO TD = TARGET - Q_TARGET
-
-        acts = self.get_actions(getattr(ddpgne, "_ensemble"), getattr(ddpgne, "_sin"), nobs) #ok
-        action = self.get_action(getattr(ddpgne, "_ensemble"), getattr(ddpgne, "_sin"), nobs, q_critic.q_critic, acts, np.zeros(self._num_ensemble), q_critic.weights)
-        train_nextq_results = ddpgne.get_value(1, nobs, np.vstack(action[0]))  # get_all_actions_target_network(nobs)
+        # train_q_results = ddpgne.get_value(0, obs)
+        train_nextq_results = ddpgne.get_value(1, nobs)  # TODO TD = TARGET - Q_TARGET
 
         # Calculate target using SARSA
         train_target_results = []
-        train_target_critic = []
         for ne in range(self._num_ensemble):
-           train_target_results.append([rew[ii] * cfg_ens[ne]['reward_scale'] + cfg_ens[ne]['gamma'] * train_nextq_plain_results[ne][ii] for ii in range(batch_size)])
-           train_target_critic.append([rew[ii] * cfg_ens[ne]['reward_scale'] + cfg_ens[ne]['gamma'] * train_nextq_results[ne][ii] for ii in range(batch_size)])
+           train_target_results.append([rew[ii] * cfg_ens[ne]['reward_scale'] + cfg_ens[ne]['gamma'] * train_nextq_results[ne][ii] for ii in range(batch_size)])
 
         # Update critic using target and actor using gradient
         ddpgne.train(obs, act, train_target_results)
@@ -46,18 +42,15 @@ class DDPGEnsembleTargetUpdateToCritic:
 
             # Calculate Q value of state
             td_l = [train_target_results[ne][ii] - train_q_results[ne][ii] for ii in range(batch_size)]
-            td_critic_l = [train_target_critic[ne][ii] - train_q_results[ne][ii] for ii in range(batch_size)]
 
             # TODO log td_l and target
             if len(td_mounted) == 0:
                 q_mounted = np.abs(train_q_results)
                 td_mounted = np.abs(td_l)
-                td_critic_mounted = np.abs(td_critic_l)
                 target_mounted = np.abs(train_target_results)
             else:
                 q_mounted = np.concatenate((q_mounted, np.abs(train_q_results)), axis=1)
                 td_mounted = np.concatenate((td_mounted, np.abs(td_l)), axis=1)
-                td_critic_mounted = np.concatenate((td_critic_mounted, np.abs(td_critic_l)), axis=1)
                 target_mounted = np.concatenate((target_mounted, np.abs(train_target_results)), axis=1)
 
         if self._dbg_weightstderror:
@@ -66,7 +59,7 @@ class DDPGEnsembleTargetUpdateToCritic:
             print(target_mounted)
             print(q_mounted)
 
-        w_train = q_critic.train(td_critic_mounted, addrw_mounted, ep)
+        w_train = q_critic.train(td_mounted, addrw_mounted, ep)
 
         weights_mounted = weights_mounted + w_train
         weights_log = np.array([w_train])
@@ -89,21 +82,3 @@ class DDPGEnsembleTargetUpdateToCritic:
             print("axis=1")
             print(data_mounted)
         return q_mounted, target_mounted, td_mounted, w_train, weights_mounted
-
-class DDPGEnsembleTargetUpdateToCriticPlain(DDPGPlainEnsemble, DDPGEnsembleTargetUpdateToCritic):
-
-    def __init__(self, sess, num_ensemble, dbg_weightstderror, print_cvs):
-        self._session = sess
-        self._num_ensemble = num_ensemble
-        self._dbg_weightstderror = dbg_weightstderror
-        self._print_cvs = print_cvs
-        print("class DDPGEnsembleTargetUpdateToCriticPlain")
-
-class DDPGEnsembleTargetUpdateToCriticSoftmaxQ(DDPGPSoftmaxQEnsemble, DDPGEnsembleTargetUpdateToCritic):
-
-    def __init__(self, sess, num_ensemble, dbg_weightstderror, print_cvs):
-        self._session = sess
-        self._num_ensemble = num_ensemble
-        self._dbg_weightstderror = dbg_weightstderror
-        self._print_cvs = print_cvs
-        print("class DDPGEnsembleTargetUpdateToCriticSoftmaxQ")
