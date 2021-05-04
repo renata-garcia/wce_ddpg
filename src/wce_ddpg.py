@@ -28,6 +28,7 @@ import pandas as pd
 import base.Online_run as rl
 
 from base.DDPGEnsembleTargetSoftmaxQ import DDPGEnsembleTargetSoftmaxQ
+from base.DDPGEnsembleTargetInvRSToCriticSoftmaxQ import DDPGEnsembleTargetInvRSToCriticSoftmaxQ
 from base.DDPGEnsembleTargetUpdateToCritic import DDPGEnsembleTargetUpdateToCriticPlain
 from base.DDPGEnsembleTargetUpdateToCritic import DDPGEnsembleTargetUpdateToCriticSoftmaxQ
 from base.DDPGEnsembleTargetUpdateInvRSToCriticSoftmaxQ import DDPGEnsembleTargetUpdateInvRSToCriticSoftmaxQ
@@ -388,6 +389,9 @@ elif "TrgtUpdateSoftmaxQInvRSCritic" in typeCriticAggregation: # train(w/ reward
 elif "TDbyMiniBatchError" in typeCriticAggregation:
     typeCriticAggregation_ = typeCriticAggregation[18:]
     online_run = DDPGEnsembleTD(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
+elif "Trgt2SoftmaxQInvRSCritic" in typeCriticAggregation:
+    typeCriticAggregation_ = typeCriticAggregation[24:]
+    online_run = DDPGEnsembleTargetInvRSToCriticSoftmaxQ(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
 else:
     typeCriticAggregation_ = typeCriticAggregation
     online_run = DDPGEnsemble(session, wce_num_ensemble, dbg_weightstderror, print_cvs)
